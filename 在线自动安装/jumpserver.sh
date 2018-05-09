@@ -63,10 +63,6 @@ fi
 
 sleep 1s
 
-git clone git://github.com/kennethreitz/autoenv.git ~/.autoenv
-echo 'source ~/.autoenv/activate.sh' >> ~/.bashrc
-source ~/.bashrc
-
 cd /opt/jumpserver && git checkout master && git pull || true
 cd /opt/coco && git checkout master && git pull || true
 cd /opt/Python-3.6.1 && ./configure && make && make install || true
@@ -259,8 +255,11 @@ sleep 1s
 cat << EOF > /opt/upgrade_jms.sh
 #!/bin/bash
 
-sh /opt/jumpserver/utils/upgrade.sh
-sh /opt/coco/utils/upgrade.sh
+source /opt/py3/bin/activate
+cd /opt/jumpserver
+git pull && pip install -r requirements/requirements.txt && cd utils && sh make_migrations.sh
+cd /opt/coco
+git pull && pip install -r requirements/requirements.txt
 exit 0
 EOF
 
