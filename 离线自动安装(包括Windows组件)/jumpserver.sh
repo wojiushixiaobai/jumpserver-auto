@@ -206,16 +206,39 @@ EOF
 
 sleep 1s
 
+echo -e "\033[31m 正在配置Windows组件 \033[0m"
+yum -y -q localinstall /opt/package/docker/*.rpm --nogpgcheck
+yum -y -q localinstall /opt/package/docker/docker-ce/*.rpm --nogpgcheck
+systemctl enable docker
+systemctl restart docker
+docker load < /opt/guacamole.tar
+serverip=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep -v 172|awk '{print $2}'|tr -d "addr:" |head -n 1`
+ip=`echo ${serverip%/24*}`
+docker run --name jms_guacamole -d -p 8081:8080 -v /opt/guacamole/key:/config/guacamole/key -e JUMPSERVER_KEY_DIR=/config/guacamole/key -e JUMPSERVER_SERVER=http://$ip:8080 jumpserver/guacamole:latest
+
+docker stop jms_guacamole
+
 systemctl restart nginx
 
 echo -e "\033[31m 正在配置脚本 \033[0m"
 cat << EOF > /opt/start_jms.sh
 #!/bin/bash
 
+ps -ef | egrep '(gunicorn|celery|beat)' | grep -v grep
+if [ $? -ne 0 ]
+then
+	echo -e "\033[31m 检测到Jumpserver进程未退出，结束中 \033[0m"
+	cd /opt && sh stop_jms.sh
+	sleep 5s
+	ps aux | egrep '(gunicorn|celery|beat)' | awk '{ print $2 }' | xargs kill -9
+else
+  echo -e "\033[31m 不存在Jumpserver进程，正常启动 \033[0m"
+fi
 source /opt/py3/bin/activate
-cd /opt/jumpserver && ./jms start all -d
+cd /opt/jumpserver && ./jms start -d
 sleep 5s
 cd /opt/coco && ./cocod start -d
+docker start jms_guacamole
 exit 0
 EOF
 
@@ -225,6 +248,7 @@ cat << EOF > /opt/stop_jms.sh
 
 source /opt/py3/bin/activate
 cd /opt/coco && ./cocod stop
+docker stop jms_guacamole
 sleep 5s
 cd /opt/jumpserver && ./jms stop
 exit 0
@@ -261,7 +285,19 @@ firewall-cmd --zone=public --add-port=5000/tcp --permanent
 firewall-cmd --zone=public --add-port=8081/tcp --permanent
 firewall-cmd --reload
 
-echo -e "\033[31m 安装完成，请到 /opt 目录下手动执行 start_jms.sh 启动 Jumpserver \033[0m"
+systemctl stop nginx && systemctl stop docker
+systemctl start nginx && systemctl start docker
+
+if [ ! -d "/opt/jumpserver/data/celery" ]; then
+		cd /opt/jumpserver && ./jms start celery -d >> /tmp/build.log
+		sleep 5s
+		./jms stop all >> /tmp/build.log
+fi
+
+cd /opt && sh start_jms.sh >> /tmp/build.log
+
+echo -e "\033[31m 如果启动失败请到 /opt 目录下手动执行 start_jms.sh 启动 Jumpserver \033[0m"
 echo -e "\033[31m 安装 log 请查看 /tmp/build.log \033[0m"
+echo -e "\033[31m 访问 http://$ip \033[0m"
 
 exit 0

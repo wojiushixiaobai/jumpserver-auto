@@ -116,6 +116,24 @@ pip install -r /opt/coco/requirements/requirements.txt --no-index --find-links="
 
 deactivate
 
+echo -e "\033[31m 正在下载docker \033[0m"
+yum install -y yum-utils device-mapper-persistent-data lvm2 --downloadonly --downloaddir=/opt/package/docker
+yum -y localinstall /opt/package/docker/*.rpm --nogpgcheck
+yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+rpm --import http://mirrors.aliyun.com/docker-ce/linux/centos/gpg
+yum makecache fast
+yum install -y docker-ce --downloadonly --downloaddir=/opt/package/docker/docker-ce
+yum -y localinstall /opt/package/docker/docker-ce/*.rpm --nogpgcheck
+
+curl -sSL https://get.daocloud.io/daotools/set_mirror.sh | sh -s http://3e8fcfbd.m.daocloud.io
+
+systemctl restart docker
+
+echo -e "\033[31m 正在下载windows组件 \033[0m"
+docker pull jumpserver/guacamole:latest
+
+docker save jumpserver/guacamole:latest > /opt/guacamole.tar
+
 cd /opt/
 if [ ! -f "/tmp/jumpserver.tar.gz" ]; then
     echo -e "\033[31m 正在打包到/tmp/jumpserver.tar.gz \033[0m"
