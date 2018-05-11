@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 
+echo -e "\033[31m 本脚本目前仅支持 Centos 7 系统 \033[0m"
 echo -e "\033[31m 按序列号选择你的问题，本脚本只试用于按照官方文档进行安装的用户使用 \033[0m"
 echo -e "\033[31m 1. coco 不在线或者提示 Failed register terminal xxx exist already \033[0m"
 echo -e "\033[31m 2. guacamole 不在线或者 终端管理没有出现 guacamole 的注册 \033[0m"
