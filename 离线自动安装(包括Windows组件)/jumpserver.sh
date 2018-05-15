@@ -259,11 +259,11 @@ chmod +x /opt/start_jms.sh
 chmod +x /opt/stop_jms.sh
 
 echo -e "\033[31m 正在写入开机自启 \033[0m"
-if grep -q 'bash /opt/start_jms.sh' /etc/rc.local; then
+if grep -q 'sh /opt/start_jms.sh' /etc/rc.local; then
 	echo -e "\033[31m 自启脚本已经存在 \033[0m"
 else
 	chmod +x /etc/rc.local
-	echo "bash /opt/start_jms.sh" >> /etc/rc.local
+	echo "sh /opt/start_jms.sh" >> /etc/rc.local
 fi
 
 echo -e "\033[31m 正在配置autoenv \033[0m"

@@ -47,10 +47,10 @@ if [ "$a" == 1 ];then
   ps axu | grep coco | awk '{ print $2 }' | xargs kill -9
 
   mv conf.py conf.py.bak && cp conf_example.py conf.py
-  if [ ! -f "$Coco_DIR/key/.access_key" ]; then
+  if [ ! -f "$Coco_DIR/keys/.access_key" ]; then
     echo -e "\033[31m Coco key 目录正常 \033[0m"
   else
-    rm $Coco_DIR/key/.access_key
+    rm $Coco_DIR/keys/.access_key
   fi
   ./cocod start -d
 
