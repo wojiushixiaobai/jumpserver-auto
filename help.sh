@@ -10,8 +10,8 @@ echo -e "\033[31m 4. 更新 1.3.0 支持 Windows 录像 (请一定要先备份 j
 echo -e "\033[31m 5. 访问 luna 页面显示 403 Forbidden \033[0m"
 echo -e "\033[31m 6. 访问 luna 页面提示 Luna 是单独部署的一个程序，你需要部署luna \033[0m"
 
-serverip=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep -v 172|awk '{print $2}'|tr -d "addr:" |head -n 1`
-ip=`echo ${serverip%/24*}`
+serverip=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep -v docker|awk '{print $2}'|tr -d "addr:" |head -n 1`
+ip=`echo ${serverip%/*}`
 guacamoleimages=`docker images | grep jumpserver | awk '{ print $1 }'`
 
 # 请修改下面参数
