@@ -7,8 +7,11 @@ echo -e "\033[31m 1. coco 不在线或者提示 Failed register terminal xxx exi
 echo -e "\033[31m 2. guacamole 不在线或者 终端管理没有出现 guacamole 的注册 \033[0m"
 echo -e "\033[31m 3. log 提示 base WARNING 或者 资产测试连接、推送显示 ........ \033[0m"
 echo -e "\033[31m 4. 更新 1.3.0 支持 Windows 录像 (请一定要先备份 jumpserver 目录与 数据库 ) \033[0m"
-echo -e "\033[31m 5. 访问 luna 页面显示 403 Forbidden \033[0m"
+echo -e "\033[31m 5. 访问 luna 页面显示 403 Forbidden 或者无法正常显示 luna 页面 \033[0m"
 echo -e "\033[31m 6. 访问 luna 页面提示 Luna 是单独部署的一个程序，你需要部署luna \033[0m"
+echo -e "\033[31m 7. 新建用户无法收到邮件或者邮件 url 为 localhost \033[0m"
+echo -e "\033[31m 8. luna 页面无法显示资产 \033[0m"
+echo -e "\033[31m 其他问题请参考 http://docs.jumpserver.org/zh/docs/ \033[0m"
 
 serverip=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep -v docker|awk '{print $2}'|tr -d "addr:" |head -n 1`
 ip=`echo ${serverip%/*}`
@@ -105,7 +108,6 @@ exit 0
 
 elif [ "$a" == 4 ];then
 
-
   if [ ! -d "$Jumpserver_DIR" ]; then
     echo -e "\033[31m Jumpserver 目录不正确 \033[0m"
     exit 0
@@ -175,8 +177,27 @@ elif [ "$a" == 6 ];then
 
   echo -e "\033[31m 不要通过 $Jumpserver_Port 端口来访问，请直接访问 http://$ip \033[0m"
 
+exit 0
+
+elif [ "$a" == 7 ];then
+
+  echo -e "\033[31m 系统设置 里面的设置变更后需要重启 jumpserver 才能生效（暂时） \033[0m"
+  echo -e "\033[31m 邮箱收到的 url 连接是 localhost，请在 系统设置-基本设置 里修改 \033[0m"
+  echo -e "\033[31m 系统设置的地址是 $ip/settings \033[0m"
+
+exit 0
+
+elif [ "$a" == 8 ];then
+
+  echo -e "\033[31m 请确定当前登陆用户已经被授权了资产 \033[0m"
+  echo -e "\033[31m ssh 登陆有资产但是 luna 页面没有请更换浏览器 \033[0m"
+
+exit 0
+
 else
   echo -e "\033[31m 输入错误，脚本自动退出 \033[0m"
   exit 0
 
 fi
+
+exit 0
