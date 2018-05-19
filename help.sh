@@ -15,6 +15,7 @@ echo -e "\033[31m 其他问题请参考 http://docs.jumpserver.org/zh/docs/ \033
 
 serverip=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep -v docker|awk '{print $2}'|tr -d "addr:" |head -n 1`
 ip=`echo ${serverip%/*}`
+echo -e "\033[31m 你的IP是 $ip 如果此处显示的ip信息不正确，请手动编辑 \033[0m"
 guacamoleimages=`docker images | grep jumpserver | awk '{ print $1 }'`
 
 # 请修改下面参数
