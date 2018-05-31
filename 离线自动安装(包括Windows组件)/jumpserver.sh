@@ -46,7 +46,7 @@ fi
 
 echo -e "\033[31m 正在解压离线包到 /opt 目录 \033[0m"
 tar zxf jumpserver.tar.gz -C /opt
-cd /opt && tar xf Python-3.6.1.tar.xz && tar xf dist.tar.gz && mv dist/ luna/
+cd /opt && tar xf Python-3.6.1.tar.xz && tar xf luna.tar.gz
 chown -R root:root luna/
 
 echo -e "\033[31m 正在安装依赖包 \033[0m"
