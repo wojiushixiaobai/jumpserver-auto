@@ -225,7 +225,7 @@ source /opt/py3/bin/activate
 cd /opt/jumpserver && ./jms start -d
 sleep 5s
 cd /opt/coco && ./cocod start -d
-docker start jms_guacamole
+# docker start jms_guacamole
 exit 0
 EOF
 
@@ -235,6 +235,7 @@ cat << EOF > /opt/stop_jms.sh
 
 source /opt/py3/bin/activate
 cd /opt/coco && ./cocod stop
+# docker stop jms_guacamole
 sleep 5s
 cd /opt/jumpserver && ./jms stop
 exit 0
@@ -271,7 +272,10 @@ firewall-cmd --zone=public --add-port=5000/tcp --permanent
 firewall-cmd --zone=public --add-port=8081/tcp --permanent
 firewall-cmd --reload
 
-echo -e "\033[31m 安装完成，请到 /opt 目录下手动执行 start_jms.sh 启动 Jumpserver \033[0m"
+cd /opt && sh start_jms.sh >> /tmp/build.log
+
+echo -e "\033[31m 如果启动失败请到 /opt 目录下手动执行 start_jms.sh 启动 Jumpserver \033[0m"
 echo -e "\033[31m 安装 log 请查看 /tmp/build.log \033[0m"
+echo -e "\033[31m 访问 http://$ip \033[0m"
 
 exit 0

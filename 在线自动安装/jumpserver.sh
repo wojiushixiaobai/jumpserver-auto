@@ -289,11 +289,10 @@ chmod +x /etc/rc.local || true
 echo "bash /opt/start_jms.sh" >> /etc/rc.local
 fi
 
-git clone git://github.com/kennethreitz/autoenv.git || true
 if grep -q 'source /opt/autoenv/activate.sh' ~/.bashrc; then
     echo -e "\033[31m 自动 python 环境已经存在 \033[0m"
 else
-    echo 'source ~/.autoenv/activate.sh' >> ~/.bashrc
+    echo 'source /opt/autoenv/activate.sh' >> ~/.bashrc
 fi
 
 source ~/.bashrc

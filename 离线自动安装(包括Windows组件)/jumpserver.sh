@@ -288,12 +288,6 @@ firewall-cmd --reload
 systemctl stop nginx && systemctl stop docker
 systemctl start nginx && systemctl start docker
 
-if [ ! -d "/opt/jumpserver/data/celery" ]; then
-		cd /opt/jumpserver && ./jms start celery -d >> /tmp/build.log
-		sleep 5s
-		./jms stop all >> /tmp/build.log
-fi
-
 cd /opt && sh start_jms.sh >> /tmp/build.log
 
 echo -e "\033[31m 如果启动失败请到 /opt 目录下手动执行 start_jms.sh 启动 Jumpserver \033[0m"
