@@ -235,9 +235,21 @@ systemctl restart nginx || true
 cat << EOF > /opt/start_jms.sh
 #!/bin/bash
 
+ps -ef | egrep '(gunicorn|celery|beat|cocod)' | grep -v grep
+if [ $? -ne 0 ]
+then
+	echo -e "\033[31m 检测到Jumpserver进程未退出，结束中 \033[0m"
+	cd /opt && sh stop_jms.sh
+	sleep 5s
+	ps aux | egrep '(gunicorn|celery|beat|cocod)' | awk '{ print $2 }' | xargs kill -9
+else
+  echo -e "\033[31m 不存在Jumpserver进程，正常启动 \033[0m"
+fi
 source /opt/py3/bin/activate
-cd /opt/jumpserver && ./jms restart -d
-cd /opt/coco && ./cocod restart -d
+cd /opt/jumpserver && ./jms start -d
+sleep 5s
+cd /opt/coco && ./cocod start -d
+docker start jms_guacamole
 exit 0
 EOF
 
@@ -247,6 +259,8 @@ cat << EOF > /opt/stop_jms.sh
 
 source /opt/py3/bin/activate
 cd /opt/coco && ./cocod stop
+docker stop jms_guacamole
+sleep 5s
 cd /opt/jumpserver && ./jms stop
 exit 0
 EOF
@@ -275,8 +289,8 @@ chmod +x /etc/rc.local || true
 echo "bash /opt/start_jms.sh" >> /etc/rc.local
 fi
 
-git clone git://github.com/kennethreitz/autoenv.git ~/.autoenv || true
-if grep -q 'source ~/.autoenv/activate.sh' ~/.bashrc; then
+git clone git://github.com/kennethreitz/autoenv.git || true
+if grep -q 'source /opt/autoenv/activate.sh' ~/.bashrc; then
     echo -e "\033[31m 自动 python 环境已经存在 \033[0m"
 else
     echo 'source ~/.autoenv/activate.sh' >> ~/.bashrc

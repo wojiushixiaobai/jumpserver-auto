@@ -1,4 +1,4 @@
-Jumpserver V1.3.0
+Jumpserver V1.3.1
 请保证硬件配置不低于双核4G
 
 离线包生成脚本可以在外网环境生成离线包，生成的离线包名称就是jumpserver.tar.gz，生成的目录在/tmp 下
