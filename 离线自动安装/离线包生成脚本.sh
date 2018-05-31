@@ -43,7 +43,7 @@ else
 fi
 
 cd /opt
-if [ ! -f "/opt/dist.tar.gz" ]; then
+if [ ! -f "/opt/luna.tar.gz" ]; then
     echo -e "\033[31m 正在下载luna \033[0m"
     wget https://github.com/jumpserver/luna/releases/download/1.3.1/luna.tar.gz
 else
