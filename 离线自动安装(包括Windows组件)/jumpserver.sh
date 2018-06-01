@@ -212,8 +212,8 @@ yum -y -q localinstall /opt/package/docker/docker-ce/*.rpm --nogpgcheck
 systemctl enable docker
 systemctl restart docker
 docker load < /opt/guacamole.tar
-serverip=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep -v 172|awk '{print $2}'|tr -d "addr:" |head -n 1`
-ip=`echo ${serverip%/24*}`
+serverip=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep -v docker|awk '{print $2}'|tr -d "addr:" |head -n 1`
+ip=`echo ${serverip%/*}`
 docker run --name jms_guacamole -d -p 8081:8080 -v /opt/guacamole/key:/config/guacamole/key -e JUMPSERVER_KEY_DIR=/config/guacamole/key -e JUMPSERVER_SERVER=http://$ip:8080 jumpserver/guacamole:latest
 
 docker stop jms_guacamole
