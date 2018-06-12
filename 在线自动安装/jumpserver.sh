@@ -236,14 +236,13 @@ cat << EOF > /opt/start_jms.sh
 #!/bin/bash
 
 ps -ef | egrep '(gunicorn|celery|beat|cocod)' | grep -v grep
-if [ \$? -ne 0 ]
-then
-	echo -e "\033[31m 检测到Jumpserver进程未退出，结束中 \033[0m"
-	cd /opt && sh stop_jms.sh
-	sleep 5s
-	ps aux | egrep '(gunicorn|celery|beat|cocod)' | awk '{ print \$2 }' | xargs kill -9
-else
+if [ \$? -ne 0 ]; then
   echo -e "\033[31m 不存在Jumpserver进程，正常启动 \033[0m"
+else
+  echo -e "\033[31m 检测到Jumpserver进程未退出，结束中 \033[0m"
+  cd /opt && sh stop_jms.sh
+  sleep 5s
+  ps aux | egrep '(gunicorn|celery|beat|cocod)' | awk '{ print \$2 }' | xargs kill -9
 fi
 source /opt/py3/bin/activate
 cd /opt/jumpserver && ./jms start -d
