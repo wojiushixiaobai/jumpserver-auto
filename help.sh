@@ -100,11 +100,17 @@ elif [ "$a" == 3 ];then
   else
   	 echo -e "\033[31m 设置环境zh_CN.UTF-8 \033[0m"
   	 localedef -c -f UTF-8 -i zh_CN zh_CN.UTF-8 && export LC_ALL=zh_CN.UTF-8 && echo 'LANG="zh_CN.UTF-8"' > /etc/locale.conf
-     cd $Jumpserver_DIR/ && ./jms restart -d
-     echo -e "\033[31m 请访问 http://$ip/ 测试 \033[0m"
-     echo -e "\033[31m 如任有问题请参考 FAQ 文档解决 http://docs.jumpserver.org/zh/docs/faq.html \033[0m"
-     exit 0
   fi
+cd $Jumpserver_DIR/apps
+python manage.py shell << EOF
+from celery.task.control import discard_all
+discard_all()
+exit()
+EOF
+
+cd $Jumpserver_DIR/ && ./jms restart celery
+echo -e "\033[31m 请访问 http://$ip/ 测试 \033[0m"
+echo -e "\033[31m 如任有问题请参考 FAQ 文档解决 http://docs.jumpserver.org/zh/docs/faq.html \033[0m"
 
 exit 0
 
