@@ -54,7 +54,7 @@ cd /opt  || true
 wget https://www.python.org/ftp/python/3.6.1/Python-3.6.1.tar.xz || true
 git clone --depth=1 https://github.com/jumpserver/jumpserver.git || true
 git clone https://github.com/jumpserver/coco.git || true
-wget https://github.com/jumpserver/luna/releases/download/1.3.1/luna.tar.gz || true
+wget https://github.com/jumpserver/luna/releases/download/1.3.2/luna.tar.gz || true
 tar xf Python-3.6.1.tar.xz && tar xf luna.tar.gz || true
 chown -R root:root luna || true
 else
