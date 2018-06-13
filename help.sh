@@ -5,8 +5,8 @@ echo -e "\033[31m 本脚本目前仅支持 Centos 7 系统 \033[0m"
 echo -e "\033[31m 按序列号选择你的问题，本脚本只试用于按照官方文档进行安装的用户使用 \033[0m"
 echo -e "\033[31m 1. coco 不在线或者提示 Failed register terminal xxx exist already \033[0m"
 echo -e "\033[31m 2. guacamole 不在线或者 终端管理没有出现 guacamole 的注册 \033[0m"
-echo -e "\033[31m 3. log 提示 base WARNING 或者 资产测试连接、推送显示 ........ \033[0m"
-echo -e "\033[31m 4. 更新 1.3.1 支持 Windows 录像 (请一定要先备份 jumpserver 目录与 数据库 ) \033[0m"
+echo -e "\033[31m 3. 资产测试连接、推送显示 ........ \033[0m"
+echo -e "\033[31m 4. 更新 1.3.2 支持 Windows 录像 (请一定要先备份 jumpserver 目录与 数据库 ) \033[0m"
 echo -e "\033[31m 5. 访问 luna 页面显示 403 Forbidden 或者无法正常显示 luna 页面 \033[0m"
 echo -e "\033[31m 6. 访问 luna 页面提示 Luna 是单独部署的一个程序，你需要部署luna \033[0m"
 echo -e "\033[31m 7. 新建用户无法收到邮件或者邮件 url 为 localhost \033[0m"
@@ -138,12 +138,12 @@ elif [ "$a" == 4 ];then
     echo -e "\033[31m Luna 目录不正确，跳过 \033[0m"
   else
     echo -e "\033[31m Luna 目录正确 \033[0m"
-    if grep -q "1.3.1-101 GPLv2." $Luna_DIR/main.bcc9e2556e7376cb8f8d.bundle.js; then
-      echo -e "\033[31m 当前 luna 版本已经是1.3.1 \033[0m"
+    if grep -q "1.3.2-101 GPLv2." $Luna_DIR/main.7c76da094b597d0d7457.bundle.js; then
+      echo -e "\033[31m 当前 luna 版本已经是1.3.2 \033[0m"
     else
       echo -e "\033[31m 正在更新 luna \033[0m"
       cd /opt && rm -rf luna.tar.gz && rm -rf luna
-      https://github.com/jumpserver/luna/releases/download/1.3.1/luna.tar.gz
+      wget https://github.com/jumpserver/luna/releases/download/1.3.2/luna.tar.gz
       tar xf luna.tar.gz
       chown -R root:root luna
     fi
@@ -163,12 +163,12 @@ elif [ "$a" == 5 ];then
   if [ ! -d "$Luna_DIR" ]; then
     echo -e "\033[31m Luna 目录不正确，跳过 \033[0m"
   else
-    echo -e "\033[31m 正在更新 luna 1.3.1 \033[0m"
+    echo -e "\033[31m 正在更新 luna 1.3.2 \033[0m"
       cd /opt && rm -rf luna.tar.gz && rm -rf luna
-      https://github.com/jumpserver/luna/releases/download/1.3.1/luna.tar.gz
+      wget https://github.com/jumpserver/luna/releases/download/1.3.2/luna.tar.gz
       tar xf luna.tar.gz
       chown -R root:root luna
-    echo -e "\033[31m 更新 luna 1.3.1 完成 \033[0m"
+    echo -e "\033[31m 更新 luna 1.3.2 完成 \033[0m"
   fi
 
 exit 0
