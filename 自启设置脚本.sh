@@ -1,6 +1,6 @@
 #!/bin/bash
 
-systemctl enable mariadb && systemctl enable nginx && systemctl enable redis
+systemctl enable mariadb && systemctl enable nginx && systemctl enable redis && systemctl enable docker
 
 echo -e "\033[31m 正在配置脚本 \033[0m"
 cat << EOF > /opt/start_jms.sh
