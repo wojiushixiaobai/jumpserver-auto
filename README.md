@@ -1,6 +1,6 @@
 # jumpserver-auto
 
-Jumpserver V1.3.1 自动安装脚本
+Jumpserver V1.3.3 自动安装脚本
 
 只试用于测试环境，适合不熟悉CentOS系统的用户使用
 

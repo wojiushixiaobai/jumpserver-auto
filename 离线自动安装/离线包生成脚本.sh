@@ -45,7 +45,7 @@ fi
 cd /opt
 if [ ! -f "/opt/luna.tar.gz" ]; then
     echo -e "\033[31m 正在下载luna \033[0m"
-    wget https://github.com/jumpserver/luna/releases/download/1.3.2/luna.tar.gz
+    wget https://github.com/jumpserver/luna/releases/download/1.3.3/luna.tar.gz
 else
     echo -e "\033[31m luna已经存在，跳过 \033[0m"
 fi

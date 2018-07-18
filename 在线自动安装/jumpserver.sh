@@ -4,13 +4,15 @@
 
 set -e
 
+Project=/opt  # Jumpserver 项目默认目录
+
 echo -e "\033[31m 请先看readme.txt说明 \033[0m"
 echo -e "\033[31m 本脚本仅用于测试环境使用 \033[0m"
 echo -e "\033[31m 本脚本为第三方使用脚本，非官方作品 \033[0m"
 echo -e "\033[31m 如果使用本脚本造成任何数据方面的损失，本人均无法负责 \033[0m"
 echo -e "\033[31m 目前本脚本仅支持CentOS 7系统 \033[0m"
 echo -e "\033[31m 请确定你当前的网络正常 \033[0m"
-echo -e "\033[31m 本脚本将会删除/opt目录下的文件 \033[0m"
+echo -e "\033[31m 本脚本将会删除 $Project 目录下的文件 \033[0m"
 echo -e "\033[31m 本程序将于10秒后开始运行，祝您好运！ \033[0m"
 
 sleep 10s
@@ -41,39 +43,39 @@ systemctl restart mariadb && systemctl restart redis || true
 
 sleep 1s
 
-rm -rf /opt/jumpserver || true
-rm -rf /opt/coco || true
-rm -rf /opt/luna* || true
-rm -rf /opt/Py* || true
-rm -rf /opt/py* || true
+rm -rf $Project/jumpserver || true
+rm -rf $Project/coco || true
+rm -rf $Project/luna* || true
+rm -rf $Project/Py* || true
+rm -rf $Project/py* || true
 
 sleep 1s
 
 if [ ! -f "jumpserver.tar.gz" ]; then
-cd /opt  || true
+cd $Project  || true
 wget https://www.python.org/ftp/python/3.6.1/Python-3.6.1.tar.xz || true
 git clone --depth=1 https://github.com/jumpserver/jumpserver.git || true
 git clone https://github.com/jumpserver/coco.git || true
-wget https://github.com/jumpserver/luna/releases/download/1.3.2/luna.tar.gz || true
+wget https://github.com/jumpserver/luna/releases/download/1.3.3/luna.tar.gz || true
 tar xf Python-3.6.1.tar.xz && tar xf luna.tar.gz || true
 chown -R root:root luna || true
 else
-tar xf jumpserver.tar.gz -C /opt || true
+tar xf jumpserver.tar.gz -C $Project || true
 fi
 
 sleep 1s
 
-cd /opt/jumpserver && git checkout master && git pull || true
-cd /opt/coco && git checkout master && git pull || true
-cd /opt/Python-3.6.1 && ./configure && make && make install || true
+cd $Project/jumpserver && git checkout master && git pull || true
+cd $Project/coco && git checkout master && git pull || true
+cd $Project/Python-3.6.1 && ./configure && make && make install || true
 
 sleep 1s
 
-cd /opt || true
-python3 -m venv /opt/py3 || true
-source /opt/py3/bin/activate || true
-yum -y install $(cat /opt/jumpserver/requirements/rpm_requirements.txt) && yum -y install $(cat /opt/coco/requirements/rpm_requirements.txt) || true
-pip install --upgrade pip && pip install -r /opt/jumpserver/requirements/requirements.txt &&  pip install -r /opt/coco/requirements/requirements.txt || true
+cd $Project || true
+python3 -m venv $Project/py3 || true
+source $Project/py3/bin/activate || true
+yum -y install $(cat $Project/jumpserver/requirements/rpm_requirements.txt) && yum -y install $(cat $Project/coco/requirements/rpm_requirements.txt) || true
+pip install --upgrade pip && pip install -r $Project/jumpserver/requirements/requirements.txt &&  pip install -r $Project/coco/requirements/requirements.txt || true
 
 sleep 1s
 
@@ -96,36 +98,36 @@ fi
 
 sleep 1s
 
-cd /opt || true
-if [ ! -f "/opt/jumpserver/config.py" ]; then
-cp /opt/jumpserver/config_example.py /opt/jumpserver/config.py || true
+cd $Project || true
+if [ ! -f "$Project/jumpserver/config.py" ]; then
+cp $Project/jumpserver/config_example.py $Project/jumpserver/config.py || true
 else
-rm -rf /opt/jumpserver/config.py || true
-cp /opt/jumpserver/config_example.py /opt/jumpserver/config.py || true
+rm -rf $Project/jumpserver/config.py || true
+cp $Project/jumpserver/config_example.py $Project/jumpserver/config.py || true
 fi
 
-if [ ! -f "/opt/coco/conf.py" ]; then
-cp /opt/coco/conf_example.py /opt/coco/conf.py || true
+if [ ! -f "$Project/coco/conf.py" ]; then
+cp $Project/coco/conf_example.py $Project/coco/conf.py || true
 else
-rm -rf /opt/coco/conf.py || true
-cp /opt/coco/conf_example.py /opt/coco/conf.py || true
+rm -rf $Project/coco/conf.py || true
+cp $Project/coco/conf_example.py $Project/coco/conf.py || true
 fi
 
 sleep 1s
 
-sed -i "s/DB_ENGINE = 'sqlite3'/# DB_ENGINE = 'sqlite3'/g" `grep "DB_ENGINE = 'sqlite3'" -rl /opt/jumpserver/config.py` || true
-sed -i "s/DB_NAME = os.path.join/# DB_NAME = os.path.join/g" `grep "DB_NAME = os.path.join" -rl /opt/jumpserver/config.py` || true
-sed -i "s/# DB_ENGINE = 'mysql'/DB_ENGINE = 'mysql'/g" `grep "# DB_ENGINE = 'mysql'" -rl /opt/jumpserver/config.py` || true
-sed -i "s/# DB_HOST = '127.0.0.1'/DB_HOST = '127.0.0.1'/g" `grep "# DB_HOST = '127.0.0.1'" -rl /opt/jumpserver/config.py` || true
-sed -i "s/# DB_PORT = 3306/DB_PORT = 3306/g" `grep "# DB_PORT = 3306" -rl /opt/jumpserver/config.py` || true
-sed -i "s/# DB_USER = 'root'/DB_USER = 'jumpserver'/g" `grep "# DB_USER = 'root'" -rl /opt/jumpserver/config.py` || true
-sed -i "s/# DB_PASSWORD = ''/DB_PASSWORD = 'somepassword'/g" `grep "# DB_PASSWORD = ''" -rl /opt/jumpserver/config.py` || true
-sed -i "s/# DB_NAME = 'jumpserver'/DB_NAME = 'jumpserver'/g" `grep "# DB_NAME = 'jumpserver'" -rl /opt/jumpserver/config.py` || true
+sed -i "s/DB_ENGINE = 'sqlite3'/# DB_ENGINE = 'sqlite3'/g" `grep "DB_ENGINE = 'sqlite3'" -rl $Project/jumpserver/config.py` || true
+sed -i "s/DB_NAME = os.path.join/# DB_NAME = os.path.join/g" `grep "DB_NAME = os.path.join" -rl $Project/jumpserver/config.py` || true
+sed -i "s/# DB_ENGINE = 'mysql'/DB_ENGINE = 'mysql'/g" `grep "# DB_ENGINE = 'mysql'" -rl $Project/jumpserver/config.py` || true
+sed -i "s/# DB_HOST = '127.0.0.1'/DB_HOST = '127.0.0.1'/g" `grep "# DB_HOST = '127.0.0.1'" -rl $Project/jumpserver/config.py` || true
+sed -i "s/# DB_PORT = 3306/DB_PORT = 3306/g" `grep "# DB_PORT = 3306" -rl $Project/jumpserver/config.py` || true
+sed -i "s/# DB_USER = 'root'/DB_USER = 'jumpserver'/g" `grep "# DB_USER = 'root'" -rl $Project/jumpserver/config.py` || true
+sed -i "s/# DB_PASSWORD = ''/DB_PASSWORD = 'somepassword'/g" `grep "# DB_PASSWORD = ''" -rl $Project/jumpserver/config.py` || true
+sed -i "s/# DB_NAME = 'jumpserver'/DB_NAME = 'jumpserver'/g" `grep "# DB_NAME = 'jumpserver'" -rl $Project/jumpserver/config.py` || true
 
 sleep 1s
 
-cd /opt/jumpserver/utils && bash make_migrations.sh || true
-cd /opt  || true
+cd $Project/jumpserver/utils && bash make_migrations.sh || true
+cd $Project  || true
 
 sleep 1s
 
@@ -182,16 +184,16 @@ http {
 
     location /luna/ {
         try_files \$uri / /index.html;
-        alias /opt/luna/;
+        alias $Project/luna/;
     }
 
     location /media/ {
         add_header Content-Encoding gzip;
-        root /opt/jumpserver/data/;
+        root $Project/jumpserver/data/;
     }
 
     location /static/ {
-        root /opt/jumpserver/data/;
+        root $Project/jumpserver/data/;
     }
 
     location /socket.io/ {
@@ -232,7 +234,7 @@ sleep 1s
 
 systemctl restart nginx || true
 
-cat << EOF > /opt/start_jms.sh
+cat << EOF > $Project/start_jms.sh
 #!/bin/bash
 
 ps -ef | egrep '(gunicorn|celery|beat|cocod)' | grep -v grep
@@ -240,64 +242,64 @@ if [ \$? -ne 0 ]; then
   echo -e "\033[31m 不存在Jumpserver进程，正常启动 \033[0m"
 else
   echo -e "\033[31m 检测到Jumpserver进程未退出，结束中 \033[0m"
-  cd /opt && sh stop_jms.sh
+  cd $Project && sh stop_jms.sh
   sleep 5s
   ps aux | egrep '(gunicorn|celery|beat|cocod)' | awk '{ print \$2 }' | xargs kill -9
 fi
-source /opt/py3/bin/activate
-cd /opt/jumpserver && ./jms start -d
+source $Project/py3/bin/activate
+cd $Project/jumpserver && ./jms start -d
 sleep 5s
-cd /opt/coco && ./cocod start -d
+cd $Project/coco && ./cocod start -d
 docker start jms_guacamole
 exit 0
 EOF
 
 sleep 1s
-cat << EOF > /opt/stop_jms.sh
+cat << EOF > $Project/stop_jms.sh
 #!/bin/bash
 
-source /opt/py3/bin/activate
-cd /opt/coco && ./cocod stop
+source $Project/py3/bin/activate
+cd $Project/coco && ./cocod stop
 docker stop jms_guacamole
 sleep 5s
-cd /opt/jumpserver && ./jms stop
+cd $Project/jumpserver && ./jms stop
 exit 0
 EOF
 
 sleep 1s
-cat << EOF > /opt/upgrade_jms.sh
+cat << EOF > $Project/upgrade_jms.sh
 #!/bin/bash
 
-source /opt/py3/bin/activate
-cd /opt/jumpserver
+source $Project/py3/bin/activate
+cd $Project/jumpserver
 git pull && pip install -r requirements/requirements.txt && cd utils && sh make_migrations.sh
-cd /opt/coco
+cd $Project/coco
 git pull && pip install -r requirements/requirements.txt
 exit 0
 EOF
 
 sleep 1s
-chmod +x /opt/start_jms.sh
-chmod +x /opt/stop_jms.sh
-chmod +x /opt/upgrade_jms.sh
+chmod +x $Project/start_jms.sh
+chmod +x $Project/stop_jms.sh
+chmod +x $Project/upgrade_jms.sh
 
-if grep -q 'bash /opt/start_jms.sh' /etc/rc.local; then
+if grep -q 'bash $Project/start_jms.sh' /etc/rc.local; then
 echo -e "\033[31m 自启脚本已经存在 \033[0m"
 else
 chmod +x /etc/rc.local || true
-echo "bash /opt/start_jms.sh" >> /etc/rc.local
+echo "bash $Project/start_jms.sh" >> /etc/rc.local
 fi
 
-if grep -q 'source /opt/autoenv/activate.sh' ~/.bashrc; then
+if grep -q 'source $Project/autoenv/activate.sh' ~/.bashrc; then
     echo -e "\033[31m 自动 python 环境已经存在 \033[0m"
 else
-    echo 'source /opt/autoenv/activate.sh' >> ~/.bashrc
+    echo 'source $Project/autoenv/activate.sh' >> ~/.bashrc
 fi
 
 source ~/.bashrc
-echo "source /opt/py3/bin/activate" > /opt/jumpserver/.env
-echo "source /opt/py3/bin/activate" > /opt/coco/.env
+echo "source $Project/py3/bin/activate" > $Project/jumpserver/.env
+echo "source $Project/py3/bin/activate" > $Project/coco/.env
 
-cd /opt && ./start_jms.sh
+cd $Project && ./start_jms.sh
 
 exit 0

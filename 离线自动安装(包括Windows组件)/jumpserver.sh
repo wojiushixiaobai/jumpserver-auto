@@ -4,11 +4,13 @@
 
 set -e
 
+Project=/opt
+
 echo -e "\033[31m 欢迎使用本脚本安装 Jumpserver \033[0m"
 echo -e "\033[31m 本脚本属于全自动安装脚本，无需人工干预及输入 \033[0m"
 echo -e "\033[31m 本脚本仅适用于测试环境，如需用作生产，请自行修改相应配置 \033[0m"
 echo -e "\033[31m 本脚本暂时只支持全新安装的 Centos7.4 \033[0m"
-echo -e "\033[31m 本脚本将会把 Jumpserver 安装在 /opt 目录下 \033[0m"
+echo -e "\033[31m 本脚本将会把 Jumpserver 安装在 $Project 目录下 \033[0m"
 echo -e "\033[31m 10秒后安装将开始，祝你好运 \033[0m"
 
 sleep 10s
@@ -44,40 +46,40 @@ else
 	localedef -c -f UTF-8 -i zh_CN zh_CN.UTF-8 && export LC_ALL=zh_CN.UTF-8 && echo 'LANG="zh_CN.UTF-8"' > /etc/locale.conf
 fi
 
-echo -e "\033[31m 正在解压离线包到 /opt 目录 \033[0m"
-tar zxf jumpserver.tar.gz -C /opt
-cd /opt && tar xf Python-3.6.1.tar.xz && tar xf luna.tar.gz
+echo -e "\033[31m 正在解压离线包到 $Project 目录 \033[0m"
+tar zxf jumpserver.tar.gz -C $Project
+cd $Project && tar xf Python-3.6.1.tar.xz && tar xf luna.tar.gz
 chown -R root:root luna/
 
 echo -e "\033[31m 正在安装依赖包 \033[0m"
-yum -y -q localinstall /opt/package/*.rpm --nogpgcheck
+yum -y -q localinstall $Project/package/*.rpm --nogpgcheck
 
 echo -e "\033[31m 正在安装 mariadb \033[0m"
-yum -y -q localinstall /opt/package/mariadb/*.rpm --nogpgcheck
+yum -y -q localinstall $Project/package/mariadb/*.rpm --nogpgcheck
 
 echo -e "\033[31m 正在安装 nginx \033[0m"
-yum -y -q localinstall /opt/package/nginx/*.rpm --nogpgcheck
+yum -y -q localinstall $Project/package/nginx/*.rpm --nogpgcheck
 
 echo -e "\033[31m 正在安装 redis \033[0m"
-yum -y -q localinstall /opt/package/redis/*.rpm --nogpgcheck
+yum -y -q localinstall $Project/package/redis/*.rpm --nogpgcheck
 
 echo -e "\033[31m 正在配置 mariadb、nginx、rdis 服务自启 \033[0m"
 systemctl enable mariadb && systemctl enable nginx && systemctl enable redis
 systemctl restart mariadb && systemctl restart redis
 
 echo -e "\033[31m 正在配置编译 python3 \033[0m"
-cd /opt/Python-3.6.1 && ./configure >> /tmp/build.log && make >> /tmp/build.log && make install >> /tmp/build.log
+cd $Project/Python-3.6.1 && ./configure >> /tmp/build.log && make >> /tmp/build.log && make install >> /tmp/build.log
 
 echo -e "\033[31m 正在配置 python3 虚拟环境 \033[0m"
-cd /opt
-python3 -m venv /opt/py3
-source /opt/py3/bin/activate || true
+cd $Project
+python3 -m venv $Project/py3
+source $Project/py3/bin/activate || true
 
 echo -e "\033[31m 正在安装依赖包 \033[0m"
-yum -y -q localinstall /opt/package/jumpserver/*.rpm --nogpgcheck && yum -y -q localinstall /opt/package/coco/*.rpm --nogpgcheck
-pip install --no-index --find-links="/opt/package/pip/jumpserver/" pyasn1 six cffi >> /tmp/build.log
-pip install -r /opt/jumpserver/requirements/requirements.txt --no-index --find-links="/opt/package/pip/jumpserver/" >> /tmp/build.log
-pip install -r /opt/coco/requirements/requirements.txt --no-index --find-links="/opt/package/pip/coco/" >> /tmp/build.log
+yum -y -q localinstall $Project/package/jumpserver/*.rpm --nogpgcheck && yum -y -q localinstall $Project/package/coco/*.rpm --nogpgcheck
+pip install --no-index --find-links="$Project/package/pip/jumpserver/" pyasn1 six cffi >> /tmp/build.log
+pip install -r $Project/jumpserver/requirements/requirements.txt --no-index --find-links="$Project/package/pip/jumpserver/" >> /tmp/build.log
+pip install -r $Project/coco/requirements/requirements.txt --no-index --find-links="$Project/package/pip/coco/" >> /tmp/build.log
 
 echo -e "\033[31m 正在配置数据库 \033[0m"
 mysql -uroot -e "
@@ -87,22 +89,22 @@ flush privileges;
 quit"
 
 echo -e "\033[31m 正在处理 jumpserver 与 coco 配置文件 \033[0m"
-cd /opt
-cp /opt/jumpserver/config_example.py /opt/jumpserver/config.py
-cp /opt/coco/conf_example.py /opt/coco/conf.py
+cd $Project
+cp $Project/jumpserver/config_example.py $Project/jumpserver/config.py
+cp $Project/coco/conf_example.py $Project/coco/conf.py
 
-sed -i "s/DB_ENGINE = 'sqlite3'/# DB_ENGINE = 'sqlite3'/g" `grep "DB_ENGINE = 'sqlite3'" -rl /opt/jumpserver/config.py`
-sed -i "s/DB_NAME = os.path.join/# DB_NAME = os.path.join/g" `grep "DB_NAME = os.path.join" -rl /opt/jumpserver/config.py`
-sed -i "s/# DB_ENGINE = 'mysql'/DB_ENGINE = 'mysql'/g" `grep "# DB_ENGINE = 'mysql'" -rl /opt/jumpserver/config.py`
-sed -i "s/# DB_HOST = '127.0.0.1'/DB_HOST = '127.0.0.1'/g" `grep "# DB_HOST = '127.0.0.1'" -rl /opt/jumpserver/config.py`
-sed -i "s/# DB_PORT = 3306/DB_PORT = 3306/g" `grep "# DB_PORT = 3306" -rl /opt/jumpserver/config.py`
-sed -i "s/# DB_USER = 'root'/DB_USER = 'jumpserver'/g" `grep "# DB_USER = 'root'" -rl /opt/jumpserver/config.py`
-sed -i "s/# DB_PASSWORD = ''/DB_PASSWORD = 'somepassword'/g" `grep "# DB_PASSWORD = ''" -rl /opt/jumpserver/config.py`
-sed -i "s/# DB_NAME = 'jumpserver'/DB_NAME = 'jumpserver'/g" `grep "# DB_NAME = 'jumpserver'" -rl /opt/jumpserver/config.py`
+sed -i "s/DB_ENGINE = 'sqlite3'/# DB_ENGINE = 'sqlite3'/g" `grep "DB_ENGINE = 'sqlite3'" -rl $Project/jumpserver/config.py`
+sed -i "s/DB_NAME = os.path.join/# DB_NAME = os.path.join/g" `grep "DB_NAME = os.path.join" -rl $Project/jumpserver/config.py`
+sed -i "s/# DB_ENGINE = 'mysql'/DB_ENGINE = 'mysql'/g" `grep "# DB_ENGINE = 'mysql'" -rl $Project/jumpserver/config.py`
+sed -i "s/# DB_HOST = '127.0.0.1'/DB_HOST = '127.0.0.1'/g" `grep "# DB_HOST = '127.0.0.1'" -rl $Project/jumpserver/config.py`
+sed -i "s/# DB_PORT = 3306/DB_PORT = 3306/g" `grep "# DB_PORT = 3306" -rl $Project/jumpserver/config.py`
+sed -i "s/# DB_USER = 'root'/DB_USER = 'jumpserver'/g" `grep "# DB_USER = 'root'" -rl $Project/jumpserver/config.py`
+sed -i "s/# DB_PASSWORD = ''/DB_PASSWORD = 'somepassword'/g" `grep "# DB_PASSWORD = ''" -rl $Project/jumpserver/config.py`
+sed -i "s/# DB_NAME = 'jumpserver'/DB_NAME = 'jumpserver'/g" `grep "# DB_NAME = 'jumpserver'" -rl $Project/jumpserver/config.py`
 
 echo -e "\033[31m 正在初始化数据库 \033[0m"
-cd /opt/jumpserver/utils && bash make_migrations.sh >> /tmp/build.log
-cd /opt
+cd $Project/jumpserver/utils && bash make_migrations.sh >> /tmp/build.log
+cd $Project
 
 echo -e "\033[31m 正在配置 nginx \033[0m"
 cat << EOF > /etc/nginx/nginx.conf
@@ -158,16 +160,16 @@ http {
 
     location /luna/ {
         try_files \$uri / /index.html;
-        alias /opt/luna/;
+        alias $Project/luna/;
     }
 
     location /media/ {
         add_header Content-Encoding gzip;
-        root /opt/jumpserver/data/;
+        root $Project/jumpserver/data/;
     }
 
     location /static/ {
-        root /opt/jumpserver/data/;
+        root $Project/jumpserver/data/;
     }
 
     location /socket.io/ {
@@ -207,21 +209,21 @@ EOF
 sleep 1s
 
 echo -e "\033[31m 正在配置Windows组件 \033[0m"
-yum -y -q localinstall /opt/package/docker/*.rpm --nogpgcheck
-yum -y -q localinstall /opt/package/docker/docker-ce/*.rpm --nogpgcheck
+yum -y -q localinstall $Project/package/docker/*.rpm --nogpgcheck
+yum -y -q localinstall $Project/package/docker/docker-ce/*.rpm --nogpgcheck
 systemctl enable docker
 systemctl restart docker
-docker load < /opt/guacamole.tar
+docker load < $Project/guacamole.tar
 serverip=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep -v docker|awk '{print $2}'|tr -d "addr:" |head -n 1`
 ip=`echo ${serverip%/*}`
-docker run --name jms_guacamole -d -p 8081:8080 -v /opt/guacamole/key:/config/guacamole/key -e JUMPSERVER_KEY_DIR=/config/guacamole/key -e JUMPSERVER_SERVER=http://$ip:8080 jumpserver/guacamole:latest
+docker run --name jms_guacamole -d -p 8081:8080 -v $Project/guacamole/key:/config/guacamole/key -e JUMPSERVER_KEY_DIR=/config/guacamole/key -e JUMPSERVER_SERVER=http://$ip:8080 jumpserver/guacamole:latest
 
 docker stop jms_guacamole
 
 systemctl restart nginx
 
 echo -e "\033[31m 正在配置脚本 \033[0m"
-cat << EOF > /opt/start_jms.sh
+cat << EOF > $Project/start_jms.sh
 #!/bin/bash
 
 ps -ef | egrep '(gunicorn|celery|beat|cocod)' | grep -v grep
@@ -229,51 +231,49 @@ if [ \$? -ne 0 ]; then
   echo -e "\033[31m 不存在Jumpserver进程，正常启动 \033[0m"
 else
   echo -e "\033[31m 检测到Jumpserver进程未退出，结束中 \033[0m"
-  cd /opt && sh stop_jms.sh
+  cd $Project && sh stop_jms.sh
   sleep 5s
   ps aux | egrep '(gunicorn|celery|beat|cocod)' | awk '{ print \$2 }' | xargs kill -9
 fi
-source /opt/py3/bin/activate
-cd /opt/jumpserver && ./jms start -d
-sleep 5s
-cd /opt/coco && ./cocod start -d
+source $Project/py3/bin/activate
+cd $Project/jumpserver && ./jms start -d
+cd $Project/coco && ./cocod start -d
 docker start jms_guacamole
 exit 0
 EOF
 
 sleep 1s
-cat << EOF > /opt/stop_jms.sh
+cat << EOF > $Project/stop_jms.sh
 #!/bin/bash
 
-source /opt/py3/bin/activate
-cd /opt/coco && ./cocod stop
+source $Project/py3/bin/activate
+cd $Project/coco && ./cocod stop
 docker stop jms_guacamole
-sleep 5s
-cd /opt/jumpserver && ./jms stop
+cd $Project/jumpserver && ./jms stop
 exit 0
 EOF
 
 sleep 1s
-chmod +x /opt/start_jms.sh
-chmod +x /opt/stop_jms.sh
+chmod +x $Project/start_jms.sh
+chmod +x $Project/stop_jms.sh
 
 echo -e "\033[31m 正在写入开机自启 \033[0m"
-if grep -q 'sh /opt/start_jms.sh' /etc/rc.local; then
+if grep -q 'sh $Project/start_jms.sh' /etc/rc.local; then
 	echo -e "\033[31m 自启脚本已经存在 \033[0m"
 else
 	chmod +x /etc/rc.local
-	echo "sh /opt/start_jms.sh" >> /etc/rc.local
+	echo "sh $Project/start_jms.sh" >> /etc/rc.local
 fi
 
 echo -e "\033[31m 正在配置autoenv \033[0m"
-if grep -q 'source /opt/autoenv/activate.sh' ~/.bashrc; then
+if grep -q 'source $Project/autoenv/activate.sh' ~/.bashrc; then
 	echo -e "\033[31m autoenv 已经配置 \033[0m"
 else
-	echo 'source /opt/autoenv/activate.sh' >> ~/.bashrc
+	echo 'source $Project/autoenv/activate.sh' >> ~/.bashrc
 fi
 
-echo 'source /opt/py3/bin/activate' > /opt/jumpserver/.env
-echo 'source /opt/py3/bin/activate' > /opt/coco/.env
+echo 'source $Project/py3/bin/activate' > $Project/jumpserver/.env
+echo 'source $Project/py3/bin/activate' > $Project/coco/.env
 
 echo -e "\033[31m 正在配置防火墙 \033[0m"
 systemctl start firewalld
@@ -287,9 +287,9 @@ firewall-cmd --reload
 systemctl stop nginx && systemctl stop docker
 systemctl start nginx && systemctl start docker
 
-cd /opt && sh start_jms.sh >> /tmp/build.log
+cd $Project && sh start_jms.sh >> /tmp/build.log
 
-echo -e "\033[31m 如果启动失败请到 /opt 目录下手动执行 start_jms.sh 启动 Jumpserver \033[0m"
+echo -e "\033[31m 如果启动失败请到 $Project 目录下手动执行 start_jms.sh 启动 Jumpserver \033[0m"
 echo -e "\033[31m 安装 log 请查看 /tmp/build.log \033[0m"
 echo -e "\033[31m 访问 http://$ip \033[0m"
 
