@@ -19,7 +19,7 @@ else
   echo -e "\033[31m 检测到Jumpserver进程未退出，结束中 \033[0m"
   cd $Project && sh stop_jms.sh
   sleep 5s
-  ps aux | egrep '(gunicorn|celery|beat|cocod)' | awk '{ print \$2 }' | xargs kill -9
+  ps aux | grep -v grep | egrep '(gunicorn|celery|beat|cocod)' | awk '{ print \$2 }' | xargs kill -9
 fi
 source $Project/py3/bin/activate
 cd $Project/jumpserver && ./jms start -d
