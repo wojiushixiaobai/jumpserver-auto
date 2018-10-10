@@ -9,7 +9,7 @@ Project=/opt
 echo -e "\033[31m 欢迎使用本脚本安装 Jumpserver \033[0m"
 echo -e "\033[31m 本脚本属于全自动安装脚本，无需人工干预及输入 \033[0m"
 echo -e "\033[31m 本脚本仅适用于测试环境，如需用作生产，请自行修改相应配置 \033[0m"
-echo -e "\033[31m 本脚本暂时只支持全新安装的 Centos7.4 \033[0m"
+echo -e "\033[31m 本脚本暂时只支持全新安装的 Centos7 \033[0m"
 echo -e "\033[31m 本脚本将会把 Jumpserver 安装在 $Project 目录下 \033[0m"
 echo -e "\033[31m 10秒后安装将开始，祝你好运 \033[0m"
 
@@ -21,14 +21,6 @@ if [ ! -f "jumpserver.tar.gz" ]; then
 	exit 1
 else
 	echo -e "\033[31m 检测到离线安装包 jumpserver.tar.gz \033[0m"
-fi
-
-if grep -q 'CentOS Linux release 7.4' /etc/redhat-release; then
-	echo -e "\033[31m 检测到系统是 Centos7.4 \033[0m"
-else
-	echo -e "\033[31m 检测到系统不是 Centos7.4 \033[0m"
-	echo -e "\033[31m 脚本自动退出 \033[0m"
-	exit 1
 fi
 
 echo -e "\033[31m 正在关闭 Selinux \033[0m"
@@ -84,7 +76,7 @@ pip install -r $Project/coco/requirements/requirements.txt --no-index --find-lin
 echo -e "\033[31m 正在配置数据库 \033[0m"
 mysql -uroot -e "
 create database jumpserver default charset 'utf8';
-grant all on jumpserver.* to 'jumpserver'@'127.0.0.1' identified by 'somepassword';
+grant all on jumpserver.* to 'jumpserver'@'127.0.0.1' identified by 'weakPassword';
 flush privileges;
 quit"
 
@@ -99,7 +91,7 @@ sed -i "s/# DB_ENGINE = 'mysql'/DB_ENGINE = 'mysql'/g" `grep "# DB_ENGINE = 'mys
 sed -i "s/# DB_HOST = '127.0.0.1'/DB_HOST = '127.0.0.1'/g" `grep "# DB_HOST = '127.0.0.1'" -rl $Project/jumpserver/config.py`
 sed -i "s/# DB_PORT = 3306/DB_PORT = 3306/g" `grep "# DB_PORT = 3306" -rl $Project/jumpserver/config.py`
 sed -i "s/# DB_USER = 'root'/DB_USER = 'jumpserver'/g" `grep "# DB_USER = 'root'" -rl $Project/jumpserver/config.py`
-sed -i "s/# DB_PASSWORD = ''/DB_PASSWORD = 'somepassword'/g" `grep "# DB_PASSWORD = ''" -rl $Project/jumpserver/config.py`
+sed -i "s/# DB_PASSWORD = ''/DB_PASSWORD = 'weakPassword'/g" `grep "# DB_PASSWORD = ''" -rl $Project/jumpserver/config.py`
 sed -i "s/# DB_NAME = 'jumpserver'/DB_NAME = 'jumpserver'/g" `grep "# DB_NAME = 'jumpserver'" -rl $Project/jumpserver/config.py`
 
 echo -e "\033[31m 正在初始化数据库 \033[0m"
@@ -154,45 +146,56 @@ http {
         # Load configuration files for the default server block.
         include /etc/nginx/default.d/*.conf;
 
-    proxy_set_header X-Real-IP \$remote_addr;
-       proxy_set_header Host \$host;
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    		proxy_set_header X-Real-IP \$remote_addr;
+       	proxy_set_header Host \$host;
+    		proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
 
-    location /luna/ {
-        try_files \$uri / /index.html;
-        alias $Project/luna/;
-    }
+    		location /luna/ {
+        		try_files \$uri / /index.html;
+        		alias $Project/luna/;
+        }
 
-    location /media/ {
-        add_header Content-Encoding gzip;
-        root $Project/jumpserver/data/;
-    }
+    		location /media/ {
+        		add_header Content-Encoding gzip;
+        		root $Project/jumpserver/data/;
+        }
 
-    location /static/ {
-        root $Project/jumpserver/data/;
-    }
+    		location /static/ {
+        		root $Project/jumpserver/data/;
+        }
 
-    location /socket.io/ {
-        proxy_pass       http://localhost:5000/socket.io/;  # 如果coco安装在别的服务器，请填写它的ip
-        proxy_buffering off;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
+    		location /socket.io/ {
+        		proxy_pass       http://localhost:5000/socket.io/;  # 如果coco安装在别的服务器，请填写它的ip
+        		proxy_buffering off;
+        		proxy_http_version 1.1;
+        		proxy_set_header Upgrade \$http_upgrade;
+        		proxy_set_header Connection "upgrade";
+        }
 
-    location /guacamole/ {
-        proxy_pass       http://localhost:8081/;  # 请填写运行docker服务的服务器ip，不更改此处Windows组件无法正常使用
-        proxy_buffering off;
-        proxy_http_version 1.1;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection \$http_connection;
-        access_log off;
-    }
+				location /coco/ {
+        		proxy_pass       http://localhost:5000/coco/;  # 如果coco安装在别的服务器，请填写它的ip
+        		proxy_set_header X-Real-IP $remote_addr;
+        		proxy_set_header Host $host;
+        		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        		access_log off;
+    		}
 
-    location / {
-        proxy_pass http://localhost:8080;  # 如果jumpserver安装在别的服务器，请填写它的ip
-    }
+    		location /guacamole/ {
+        		proxy_pass       http://localhost:8081/;  # 请填写运行docker服务的服务器ip，不更改此处Windows组件无法正常使用
+        		proxy_buffering off;
+        		proxy_http_version 1.1;
+        		proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        		proxy_set_header Upgrade \$http_upgrade;
+        		proxy_set_header Connection \$http_connection;
+        		access_log off;
+        }
+
+    		location / {
+        		proxy_pass http://localhost:8080;  # 如果jumpserver安装在别的服务器，请填写它的ip
+						proxy_set_header X-Real-IP $remote_addr;
+        		proxy_set_header Host $host;
+        		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    		}
 
         error_page 404 /404.html;
             location = /40x.html {
@@ -274,18 +277,6 @@ fi
 
 echo 'source $Project/py3/bin/activate' > $Project/jumpserver/.env
 echo 'source $Project/py3/bin/activate' > $Project/coco/.env
-
-echo -e "\033[31m 正在配置防火墙 \033[0m"
-systemctl start firewalld
-firewall-cmd --zone=public --add-port=8080/tcp --permanent
-firewall-cmd --zone=public --add-port=80/tcp --permanent
-firewall-cmd --zone=public --add-port=2222/tcp --permanent
-firewall-cmd --zone=public --add-port=5000/tcp --permanent
-firewall-cmd --zone=public --add-port=8081/tcp --permanent
-firewall-cmd --reload
-
-systemctl stop nginx && systemctl stop docker
-systemctl start nginx && systemctl start docker
 
 cd $Project && sh start_jms.sh >> /tmp/build.log
 
