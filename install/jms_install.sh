@@ -194,7 +194,7 @@ if [ ! -d "$install_dir/jumpserver" ]; then
 fi
 if [ ! -d "$install_dir/luna" ]; then
     if [ ! -f "$install_dir/luna.tar.gz" ]; then
-        wget https://github.com/jumpserver/luna/releases/download/$Version/luna.tar.gz || {
+        wget -O $install_dir/luna.tar.gz https://github.com/jumpserver/luna/releases/download/$Version/luna.tar.gz || {
             rm -rf $install_dir/luna.tar.gz
             wget -O $install_dir/luna.tar.gz https://demo.jumpserver.org/download/luna/$Version/luna.tar.gz
         }
