@@ -201,6 +201,7 @@ if [ ! -d "$install_dir/luna" ]; then
     fi
     tar xf $install_dir/luna.tar.gz -C $install_dir
     chown -R nginx:nginx $install_dir/luna
+    rm -rf $install_dir/luna.tar.gz
 fi
 if [ "$(docker images | grep koko | awk '{print $2}')" != "$Version" ]; then
     docker pull wojiushixiaobai/jms_koko:$Version
