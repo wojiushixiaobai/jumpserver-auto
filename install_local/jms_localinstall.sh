@@ -403,10 +403,7 @@ if [ ! -f "/usr/lib/systemd/system/jms_koko.service" ]; then
     fi
     systemctl daemon-reload
     systemctl enable jms_koko
-    systemctl start jms_koko  || {
-        systemctl stop jms_koko
-        systemctl start jms_koko
-    }
+    systemctl start jms_koko
 fi
 
 echo -e "\033[31m 启动Guacamole \033[0m"
@@ -434,6 +431,12 @@ else
         systemctl start jms_guacd
         systemctl start jms_guacamole
     fi
+fi
+
+if [ "$(systemctl status jms_koko | grep running)" != "" ]; then
+    systemctl start jms_koko || {
+        echo -e "\033[31m Jms_koko 启动失败, 请手动检查 \033[0m"
+    }
 fi
 
 echo -e "\033[31m 请打开浏览器访问 http://$Server_IP 用户名:admin 密码:admin \033[0m"
