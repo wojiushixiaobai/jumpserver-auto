@@ -62,7 +62,7 @@ if [ "$(getenforce)" != "Disabled" ]; then
 fi
 
 echo -e "\033[31m 设置 Yum 源 \033[0m"
-curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
 sed -i -e '/mirrors.cloud.aliyuncs.com/d' -e '/mirrors.aliyuncs.com/d' /etc/yum.repos.d/CentOS-Base.repo
 if [ "$(rpm -qa | grep epel-release)" == "" ]; then
     yum -y install epel-release
@@ -134,7 +134,7 @@ if [ "$(rpm -qa | grep nginx)" == "" ]; then
     systemctl enable nginx
     if [ ! -f "/etc/nginx/conf.d/jumpserver.conf" ]; then
         echo > /etc/nginx/conf.d/default.conf
-        curl -o /etc/nginx/conf.d/jumpserver.conf https://demo.jumpserver.org/download/nginx/conf.d/jumpserver.conf
+        wget -O /etc/nginx/conf.d/jumpserver.conf https://demo.jumpserver.org/download/nginx/conf.d/jumpserver.conf
         if [ $install_dir != "/opt" ]; then
             sed -i "s@/opt@$install_dir@g" /etc/nginx/conf.d/jumpserver.conf
         fi
