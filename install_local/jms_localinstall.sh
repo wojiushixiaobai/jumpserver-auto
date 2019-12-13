@@ -356,7 +356,7 @@ if [ ! -f "$install_dir/kokodir/config.yml" ]; then
     sed -i "s/# LOG_LEVEL: INFO/LOG_LEVEL: ERROR/g" $install_dir/kokodir/config.yml
     sed -i "s@# SFTP_ROOT: /tmp@SFTP_ROOT: /@g" $install_dir/kokodir/config.yml
 else
-    if [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep BOOTSTRAP_TOKEN | awk '{print $2}')" != "$BOOTSTRAP_TOKEN" ] || [ "$flag" == "1" ]; then
+    if [ "$(cat $install_dir/kokodir/config.yml | grep -v ^\# | grep BOOTSTRAP_TOKEN | awk '{print $2}')" != "$BOOTSTRAP_TOKEN" ] || [ "$flag" == "1" ]; then
         rm -rf $install_dir/kokodir/config.yml
         rm -rf $install_dir/kokodir/data/keys/*
         cp $install_dir/kokodir/config_example.yml $install_dir/kokodir/config.yml
