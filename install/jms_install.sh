@@ -28,6 +28,7 @@ REDIS_PASSWORD=
 install_dir=/opt
 script_file=jms_install.sh
 
+echo -e "\033[31m 请勿在任何已经部署了其他服务的生产服务器上面运行此脚本 \033[0m"
 echo -e "\033[31m 如果你有已经配置好的 数据库 和 redis , 请先编辑此脚本修改对应的变量, 后再继续安装 \033[0m"
 read -p "任意键回车继续安装, 按 q 退出 :" a
 if [ "$a" == q -o "$a" == Q ];then
@@ -129,6 +130,9 @@ if [ $REDIS_HOST == 127.0.0.1 ]; then
     fi
     if [ "$(systemctl status redis | grep running)" == "" ]; then
         systemctl start redis
+    fi
+    if [ "$flag" == "1" ]; then
+        redis-cli -h $REDIS_HOST -p $REDIS_PORT -a $REDIS_PASSWORD flushall
     fi
 fi
 

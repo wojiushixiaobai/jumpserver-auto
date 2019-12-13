@@ -28,6 +28,7 @@ REDIS_PASSWORD=
 install_dir=/opt
 script_file=jms_localinstall.sh
 
+echo -e "\033[31m 请勿在任何已经部署了其他服务的生产服务器上面运行此脚本 \033[0m"
 echo -e "\033[31m 如果你有已经配置好的 数据库 和 redis , 请先编辑此脚本修改对应的变量, 后再继续安装 \033[0m"
 read -p "任意键回车继续安装, 按 q 退出 :" a
 if [ "$a" == q -o "$a" == Q ];then
@@ -129,6 +130,9 @@ if [ $REDIS_HOST == 127.0.0.1 ]; then
     fi
     if [ "$(systemctl status redis | grep running)" == "" ]; then
         systemctl start redis
+    fi
+    if [ "$flag" == "1" ]; then
+        redis-cli -h $REDIS_HOST -p $REDIS_PORT -a $REDIS_PASSWORD flushall
     fi
 fi
 
@@ -330,6 +334,7 @@ if [ ! -f "$install_dir/jumpserver/config.yml" ]; then
     sed -i "s/REDIS_PORT: 6379/REDIS_PORT: $REDIS_PORT/g" $install_dir/jumpserver/config.yml
     sed -i "s/# REDIS_PASSWORD: /REDIS_PASSWORD: $REDIS_PASSWORD/g" $install_dir/jumpserver/config.yml
 else
+    echo -e "\033[31m 修正 Jumpserver 配置文件 \033[0m"
     if [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep SECRET_KEY | awk '{print $2}')" != "$SECRET_KEY" ] || [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep BOOTSTRAP_TOKEN | awk '{print $2}')" != "$BOOTSTRAP_TOKEN" ] || [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep DB_PASSWORD | awk '{print $2}')" != "$DB_PASSWORD" ] || [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep REDIS_PASSWORD | awk '{print $2}')" != "$REDIS_PASSWORD" ]; then
         rm -rf $install_dir/jumpserver/config.yml
         cp $install_dir/jumpserver/config_example.yml $install_dir/jumpserver/config.yml
@@ -356,9 +361,9 @@ if [ ! -f "$install_dir/kokodir/config.yml" ]; then
     sed -i "s/# LOG_LEVEL: INFO/LOG_LEVEL: ERROR/g" $install_dir/kokodir/config.yml
     sed -i "s@# SFTP_ROOT: /tmp@SFTP_ROOT: /@g" $install_dir/kokodir/config.yml
 else
-    if [ "$(cat $install_dir/kokodir/config.yml | grep -v ^\# | grep BOOTSTRAP_TOKEN | awk '{print $2}')" != "$BOOTSTRAP_TOKEN" ] || [ "$flag" == "1" ]; then
+    if [ "$(cat $install_dir/kokodir/config.yml | grep -v ^\# | grep $BOOTSTRAP_TOKEN)" == "" ] || [ "$flag" == "1" ]; then
         rm -rf $install_dir/kokodir/config.yml
-        rm -rf $install_dir/kokodir/data/keys/*
+        rm -rf $install_dir/kokodir/data/keys/.access_key
         cp $install_dir/kokodir/config_example.yml $install_dir/kokodir/config.yml
         sed -i "s/BOOTSTRAP_TOKEN: <PleasgeChangeSameWithJumpserver>/BOOTSTRAP_TOKEN: $BOOTSTRAP_TOKEN/g" $install_dir/kokodir/config.yml
         sed -i "s/# LOG_LEVEL: INFO/LOG_LEVEL: ERROR/g" $install_dir/kokodir/config.yml
@@ -388,6 +393,7 @@ systemctl start jms_core || {
     systemctl start jms_core
 }
 
+sleep 10s
 echo -e "\033[31m 启动 Koko \033[0m"
 if [ ! -f "/usr/lib/systemd/system/jms_koko.service" ]; then
     wget -O /usr/lib/systemd/system/jms_koko.service https://demo.jumpserver.org/download/shell/centos/jms_koko.service
