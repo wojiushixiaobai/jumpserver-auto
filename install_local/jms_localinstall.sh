@@ -403,7 +403,10 @@ if [ ! -f "/usr/lib/systemd/system/jms_koko.service" ]; then
     fi
     systemctl daemon-reload
     systemctl enable jms_koko
-    systemctl start jms_koko
+    systemctl start jms_koko  || {
+        systemctl stop jms_koko
+        systemctl start jms_koko
+    }
 fi
 
 echo -e "\033[31m 启动Guacamole \033[0m"
