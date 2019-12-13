@@ -7,7 +7,7 @@
 注：本使用脚本非官方给出，脚本代码均未作任何加密，可以自行修改处理。本人非专业脚本工程师，能力有限，如果有更好的执行方式，欢迎指正。
 
 ```
-$ yum install -y wget
+$ yum install -y install wget
 $ cd /opt
 $ wget -O jms_install.sh https://demo.jumpserver.org/download/jms_install.sh
 $ sh jms_install.sh
