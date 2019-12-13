@@ -12,6 +12,6 @@
 $ yum -y install wget
 $ cd /opt
 $ wget -O jms_localinstall.sh https://demo.jumpserver.org/download/jms_localinstall.sh
-$ sh jms_install.sh
+$ sh jms_localinstall.sh
 
 ```
