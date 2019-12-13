@@ -99,6 +99,7 @@ if [ $DB_HOST == 127.0.0.1 ]; then
             echo -e "\033[31m 检测到数据库用户或者密码设置不当, 正在重新设置 \033[0m"
             mysql -uroot -e "drop database $DB_NAME;drop user $DB_USER@127.0.0.1;"
             mysql -uroot -e "create database $DB_NAME default charset 'utf8';grant all on $DB_NAME.* to '$DB_USER'@'127.0.0.1' identified by '$DB_PASSWORD';flush privileges;"
+            flag=1
         }
     fi
 fi
@@ -117,11 +118,11 @@ if [ $REDIS_HOST == 127.0.0.1 ]; then
               REDIS_PASSWORD=`cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 24`
               sed -i "481i requirepass $REDIS_PASSWORD" /etc/redis.conf
               sed -i "0,/REDIS_PASSWORD=/s//REDIS_PASSWORD=$REDIS_PASSWORD/" $install_dir/$script_file
-          else
-              REDIS_PASSWORD=`cat /etc/redis.conf | grep -v ^\# | grep requirepass | awk '{print $2}'`
-              sed -i '23d' $install_dir/$script_file
-              sed -i "23i REDIS_PASSWORD=$REDIS_PASSWORD" $install_dir/$script_file
           fi
+    else
+          REDIS_PASSWORD=`cat /etc/redis.conf | grep -v ^\# | grep requirepass | awk '{print $2}'`
+          sed -i '23d' $install_dir/$script_file
+          sed -i "23i REDIS_PASSWORD=$REDIS_PASSWORD" $install_dir/$script_file
     fi
     if [ "$(systemctl status redis | grep running)" == "" ]; then
         systemctl start redis
@@ -299,15 +300,15 @@ fi
 cd $install_dir
 
 echo -e "\033[31m 处理 Jumpser 配置文件 \033[0m"
-if [ "$SECRET_KEY" = "" ]; then
+if [ "$SECRET_KEY" == "" ]; then
     SECRET_KEY=`cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 50`
     sed -i "0,/SECRET_KEY=/s//SECRET_KEY=$SECRET_KEY/" $install_dir/$script_file
 fi
-if [ "$BOOTSTRAP_TOKEN" = "" ]; then
+if [ "$BOOTSTRAP_TOKEN" == "" ]; then
     BOOTSTRAP_TOKEN=`cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 16`
     sed -i "0,/BOOTSTRAP_TOKEN=/s//BOOTSTRAP_TOKEN=$BOOTSTRAP_TOKEN/" $install_dir/$script_file
 fi
-if [ "$Server_IP" = "" ]; then
+if [ "$Server_IP" == "" ]; then
     Server_IP=`ip addr | grep 'state UP' -A2 | grep inet | egrep -v '(127.0.0.1|inet6|docker)' | awk '{print $2}' | tr -d "addr:" | head -n 1 | cut -d / -f1`
 fi
 if [ ! -f "$install_dir/jumpserver/config.yml" ]; then
@@ -352,7 +353,7 @@ if [ ! -f "$install_dir/kokodir/config.yml" ]; then
     sed -i "s/# LOG_LEVEL: INFO/LOG_LEVEL: ERROR/g" $install_dir/kokodir/config.yml
     sed -i "s@# SFTP_ROOT: /tmp@SFTP_ROOT: /@g" $install_dir/kokodir/config.yml
 else
-    if [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep BOOTSTRAP_TOKEN | awk '{print $2}')" != "$BOOTSTRAP_TOKEN" ]; then
+    if [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep BOOTSTRAP_TOKEN | awk '{print $2}')" != "$BOOTSTRAP_TOKEN" ] || [ "$flag" == "1" ]; then
         rm -rf $install_dir/kokodir/config.yml
         rm -rf $install_dir/kokodir/data/keys/*
         cp $install_dir/kokodir/config_example.yml $install_dir/kokodir/config.yml
@@ -408,7 +409,7 @@ if [ ! -f "/usr/lib/systemd/system/jms_guacamole.service" ]; then
     systemctl start jms_guacd
     systemctl start jms_guacamole
 else
-    if [ "$(cat /usr/lib/systemd/system/jms_guacamole.service | grep -v ^\# | grep $BOOTSTRAP_TOKEN)" == "" ]; then
+    if [ "$(cat /usr/lib/systemd/system/jms_guacamole.service | grep -v ^\# | grep $BOOTSTRAP_TOKEN)" == "" ] || [ "$flag" == "1" ]; then
         rm -rf /usr/lib/systemd/system/jms_guacamole.service
         rm -rf /config/guacamole/keys/*
         wget -O /usr/lib/systemd/system/jms_guacamole.service https://demo.jumpserver.org/download/shell/centos/jms_guacamole.service
