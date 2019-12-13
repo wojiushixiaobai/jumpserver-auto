@@ -228,8 +228,8 @@ pip install -r $install_dir/jumpserver/requirements/requirements.txt
 
 echo -e "\033[31m 配置 Guacamole 依赖 \033[0m"
 if [ ! -d "/config" ]; then
-    mkdir -p /config/guacamole /config/guacamole/extensions /config/guacamole/record
-    chmod 777 /config/guacamole/record
+    mkdir -p /config/guacamole /config/guacamole/extensions /config/guacamole/record /config/guacamole/drive
+    chown daemon:daemon /config/guacamole/record /config/guacamole/drive
 fi
 if [ ! -d "/usr/local/lib/freerdp" ]; then
     mkdir /usr/local/lib/freerdp/
