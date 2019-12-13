@@ -62,14 +62,14 @@ if [ "$(getenforce)" != "Disabled" ]; then
 fi
 
 echo -e "\033[31m 设置 Yum 源 \033[0m"
-wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo || {
+    yum install -y wget
+    wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+}
 sed -i -e '/mirrors.cloud.aliyuncs.com/d' -e '/mirrors.aliyuncs.com/d' /etc/yum.repos.d/CentOS-Base.repo
 if [ "$(rpm -qa | grep epel-release)" == "" ]; then
     yum -y install epel-release
-    wget -O /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo || {
-	yum install -y wget
-	wget -O /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
-    }
+    wget -O /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
 fi
 
 echo -e "\033[31m 安装基本依赖 \033[0m"
@@ -90,11 +90,16 @@ if [ $DB_HOST == 127.0.0.1 ]; then
     fi
     if [ ! $DB_PASSWORD ]; then
         DB_PASSWORD=`cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 24`
-
         sed -i "0,/DB_PASSWORD=/s//DB_PASSWORD=$DB_PASSWORD/" $install_dir/$script_file
     fi
     if [ ! -d "/var/lib/mysql/jumpserver" ]; then
         mysql -uroot -e "create database $DB_NAME default charset 'utf8';grant all on $DB_NAME.* to '$DB_USER'@'127.0.0.1' identified by '$DB_PASSWORD';flush privileges;"
+    else
+        mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASSWORD -e "use $DB_NAME;" || {
+            echo -e "\033[31m 检测到数据库用户或者密码设置不当, 正在重新设置 \033[0m"
+            mysql -uroot -e "drop database $DB_NAME;drop user $DB_USER@127.0.0.1;"
+            mysql -uroot -e "create database $DB_NAME default charset 'utf8';grant all on $DB_NAME.* to '$DB_USER'@'127.0.0.1' identified by '$DB_PASSWORD';flush privileges;"
+        }
     fi
 fi
 
@@ -108,15 +113,15 @@ if [ $REDIS_HOST == 127.0.0.1 ]; then
         sed -i "s/port 6379/port $REDIS_PORT/g" /etc/redis.conf
     fi
     if [ ! $REDIS_PASSWORD ]; then
-        REDIS_PASSWORD=`cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 24`
-        sed -i "481i requirepass $REDIS_PASSWORD" /etc/redis.conf
-        sed -i "0,/REDIS_PASSWORD=/s//REDIS_PASSWORD=$REDIS_PASSWORD/" $install_dir/$script_file
-    else
-        if [ "$(cat /etc/redis.conf | grep -v \# | grep $REDIS_PASSWORD)" == "" ]; then
-            REDIS_PASSWORD=`cat /etc/redis.conf | grep -v ^\# | grep requirepass | awk '{print $2}'`
-            sed -i '23d' $install_dir/$script_file
-            sed -i "23i REDIS_PASSWORD=$REDIS_PASSWORD" $install_dir/$script_file
-        fi
+          if [ "$(cat /etc/redis.conf | grep -v ^\# | grep requirepass | awk '{print $2}')" == "" ]; then
+              REDIS_PASSWORD=`cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 24`
+              sed -i "481i requirepass $REDIS_PASSWORD" /etc/redis.conf
+              sed -i "0,/REDIS_PASSWORD=/s//REDIS_PASSWORD=$REDIS_PASSWORD/" $install_dir/$script_file
+          else
+              REDIS_PASSWORD=`cat /etc/redis.conf | grep -v ^\# | grep requirepass | awk '{print $2}'`
+              sed -i '23d' $install_dir/$script_file
+              sed -i "23i REDIS_PASSWORD=$REDIS_PASSWORD" $install_dir/$script_file
+          fi
     fi
     if [ "$(systemctl status redis | grep running)" == "" ]; then
         systemctl start redis
@@ -244,31 +249,46 @@ if [ ! -f "$install_dir/jumpserver/config.yml" ]; then
     sed -i "s/REDIS_HOST: 127.0.0.1/REDIS_HOST: $REDIS_HOST/g" $install_dir/jumpserver/config.yml
     sed -i "s/REDIS_PORT: 6379/REDIS_PORT: $REDIS_PORT/g" $install_dir/jumpserver/config.yml
     sed -i "s/# REDIS_PASSWORD: /REDIS_PASSWORD: $REDIS_PASSWORD/g" $install_dir/jumpserver/config.yml
+else
+    if [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep SECRET_KEY | awk '{print $2}')" != "$SECRET_KEY" ] || [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep BOOTSTRAP_TOKEN | awk '{print $2}')" != "$BOOTSTRAP_TOKEN" ] || [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep DB_PASSWORD | awk '{print $2}')" != "$DB_PASSWORD" ] || [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep REDIS_PASSWORD | awk '{print $2}')" != "$REDIS_PASSWORD" ]; then
+        rm -rf $install_dir/jumpserver/config.yml
+        cp $install_dir/jumpserver/config_example.yml $install_dir/jumpserver/config.yml
+        sed -i "s/SECRET_KEY:/SECRET_KEY: $SECRET_KEY/g" $install_dir/jumpserver/config.yml
+        sed -i "s/BOOTSTRAP_TOKEN:/BOOTSTRAP_TOKEN: $BOOTSTRAP_TOKEN/g" $install_dir/jumpserver/config.yml
+        sed -i "s/# DEBUG: true/DEBUG: false/g" $install_dir/jumpserver/config.yml
+        sed -i "s/# LOG_LEVEL: DEBUG/LOG_LEVEL: ERROR/g" $install_dir/jumpserver/config.yml
+        sed -i "s/# SESSION_EXPIRE_AT_BROWSER_CLOSE: false/SESSION_EXPIRE_AT_BROWSER_CLOSE: true/g" $install_dir/jumpserver/config.yml
+        sed -i "s/DB_HOST: 127.0.0.1/DB_HOST: $DB_HOST/g" $install_dir/jumpserver/config.yml
+        sed -i "s/DB_PORT: 3306/DB_PORT: $DB_PORT/g" $install_dir/jumpserver/config.yml
+        sed -i "s/DB_USER: jumpserver/DB_USER: $DB_USER/g" $install_dir/jumpserver/config.yml
+        sed -i "s/DB_PASSWORD: /DB_PASSWORD: $DB_PASSWORD/g" $install_dir/jumpserver/config.yml
+        sed -i "s/DB_NAME: jumpserver/DB_NAME: $DB_NAME/g" $install_dir/jumpserver/config.yml
+        sed -i "s/REDIS_HOST: 127.0.0.1/REDIS_HOST: $REDIS_HOST/g" $install_dir/jumpserver/config.yml
+        sed -i "s/REDIS_PORT: 6379/REDIS_PORT: $REDIS_PORT/g" $install_dir/jumpserver/config.yml
+        sed -i "s/# REDIS_PASSWORD: /REDIS_PASSWORD: $REDIS_PASSWORD/g" $install_dir/jumpserver/config.yml
+    fi
 fi
 
 echo -e "\033[31m 启动 Jumpserver \033[0m"
-if [ ! -f "/usr/lib/systemd/system/jms.service" ]; then
-    wget -O /usr/lib/systemd/system/jms.service https://demo.jumpserver.org/download/shell/centos/jms.service
+if [ ! -f "/usr/lib/systemd/system/jms_core.service" ]; then
+    wget -O /usr/lib/systemd/system/jms_core.service https://demo.jumpserver.org/download/shell/centos/jms_core.service
     if [ $install_dir != "/opt" ]; then
-        sed -i "s@/opt@$install_dir@g" /usr/lib/systemd/system/jms.service
+        sed -i "s@/opt@$install_dir@g" /usr/lib/systemd/system/jms_core.service
     fi
     if [ $DB_HOST != 127.0.0.1 ]; then
-        sed -i "s/mariadb.service //g" /usr/lib/systemd/system/jms.service
+        sed -i "s/mariadb.service //g" /usr/lib/systemd/system/jms_core.service
     fi
     if [ $REDIS_HOST != 127.0.0.1 ]; then
-        sed -i "s/redis.service //g" /usr/lib/systemd/system/jms.service
+        sed -i "s/redis.service //g" /usr/lib/systemd/system/jms_core.service
     fi
-    chmod 755 /usr/lib/systemd/system/jms.service
+    chmod 755 /usr/lib/systemd/system/jms_core.service
     systemctl daemon-reload
-    systemctl enable jms
+    systemctl enable jms_core
 fi
-cd $install_dir/jumpserver
-./jms start -d || {
-    ./jms stop
-    sleep 10s
-    ps -aux | egrep "python3|py3" | awk '{print $2}' | xargs kill -9
-    rm -rf $install_dir/jumpserver/tmp/*.pid
-    ./jms start -d
+
+systemctl start jms_core || {
+    systemctl stop jms_core
+    systemctl start jms_core
 }
 if [ "$(docker ps -a | grep jms_koko | grep $Version)" == "" ]; then
     if [ "$(docker ps | grep jms_koko)" != "" ]; then
