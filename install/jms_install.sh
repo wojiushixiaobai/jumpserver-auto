@@ -309,7 +309,7 @@ if [ ! "$(docker ps -a | grep jms_guacamole | grep $Version)" ] || [ "$flag" == 
         docker stop jms_guacamole
         docker rm jms_guacamole
     fi
-    docker run --name jms_guacamole -d -p 127.0.0.1:8081:8080 -e JUMPSERVER_SERVER=http://$Server_IP:8080 -e BOOTSTRAP_TOKEN=$BOOTSTRAP_TOKEN -e GUACAMOLE_LOG_LEVEL=ERROR --restart=always jumpserver/jms_guacamole:$Version
+    docker run --name jms_guacamole -d -p 127.0.0.1:8081:8080 -e JUMPSERVER_SERVER=http://$Server_IP:8080 -e BOOTSTRAP_TOKEN=$BOOTSTRAP_TOKEN --restart=always wojiushixiaobai/jms_guacamole:$Version
 else
     docker restart jms_guacamole
 fi
