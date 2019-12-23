@@ -44,17 +44,20 @@ else
 fi
 
 echo -e "\033[31m 设置 防火墙 \033[0m"
-if [ "$(systemctl status firewalld | grep running)" != "" ]; then
-    if [ "$(firewall-cmd --list-all | grep 80)" == "" ]; then
+if [ "$(systemctl status firewalld | grep running)" ]; then
+    if [ ! "$(firewall-cmd --list-all | grep 80)" ]; then
         firewall-cmd --zone=public --add-port=80/tcp --permanent
+        firewall-cmd --reload
     fi
-    if [ "$(firewall-cmd --list-all | grep 2222)" == "" ]; then
+    if [ ! "$(firewall-cmd --list-all | grep 2222)" ]; then
         firewall-cmd --zone=public --add-port=2222/tcp --permanent
+        firewall-cmd --reload
     fi
-    if [ "$(firewall-cmd --list-all | grep 8080)" == "" ]; then
+    if [ ! "$(firewall-cmd --list-all | grep 8080)" ]; then
         firewall-cmd --permanent --add-rich-rule="rule family="ipv4" source address="172.17.0.0/16" port protocol="tcp" port="8080" accept"
+        firewall-cmd --reload
     fi
-    firewall-cmd --reload
+
 fi
 
 echo -e "\033[31m 设置 Selinux \033[0m"
@@ -68,14 +71,16 @@ wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-
     wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
 }
 sed -i -e '/mirrors.cloud.aliyuncs.com/d' -e '/mirrors.aliyuncs.com/d' /etc/yum.repos.d/CentOS-Base.repo
-if [ "$(rpm -qa | grep epel-release)" == "" ]; then
+if [ ! "$(rpm -qa | grep epel-release)" ]; then
     yum -y install epel-release
     wget -O /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
 fi
 
 echo -e "\033[31m 安装基本依赖 \033[0m"
 yum update -y
-yum -y install wget gcc git
+if [ ! "$(rpm -qa | grep wget)" ] || [ ! "$(rpm -qa | grep gcc)" ] || [ ! "$(rpm -qa | grep git)" ]; then
+    yum -y install wget gcc git
+fi
 
 echo -e "\033[31m 配置 Mariadb \033[0m"
 if [ $DB_HOST == 127.0.0.1 ]; then
@@ -86,7 +91,7 @@ if [ $DB_HOST == 127.0.0.1 ]; then
     if [ $DB_PORT != 3306 ]; then
         sed -i "10i port=$DB_PORT" $install_dir/$script_file
     fi
-    if [ "$(systemctl status mariadb | grep running)" == "" ]; then
+    if [ ! "$(systemctl status mariadb | grep running)" ]; then
         systemctl start mariadb
     fi
     if [ ! $DB_PASSWORD ]; then
@@ -107,7 +112,7 @@ fi
 
 echo -e "\033[31m 配置 Redis \033[0m"
 if [ $REDIS_HOST == 127.0.0.1 ]; then
-    if [ "$(rpm -qa | grep redis)" == "" ]; then
+    if [ ! "$(rpm -qa | grep redis)" ]; then
         yum -y install redis
         systemctl enable redis
     fi
@@ -128,7 +133,7 @@ if [ $REDIS_HOST == 127.0.0.1 ]; then
           sed -i '23d' $install_dir/$script_file
           sed -i "23i REDIS_PASSWORD=$REDIS_PASSWORD" $install_dir/$script_file
     fi
-    if [ "$(systemctl status redis | grep running)" == "" ]; then
+    if [ ! "$(systemctl status redis | grep running)" ]; then
         systemctl start redis
     fi
     if [ "$flag" == "1" ]; then
@@ -140,7 +145,7 @@ echo -e "\033[31m 配置 Nginx \033[0m"
 if [ ! -f "/etc/yum.repos.d/nginx.repo" ]; then
     echo -e "[nginx-stable]\nname=nginx stable repo\nbaseurl=http://nginx.org/packages/centos/\$releasever/\$basearch/\ngpgcheck=1\nenabled=1\ngpgkey=https://nginx.org/keys/nginx_signing.key\nmodule_hotfixes=true" > /etc/yum.repos.d/nginx.repo
 fi
-if [ "$(rpm -qa | grep nginx)" == "" ]; then
+if [ ! "$(rpm -qa | grep nginx)" ]; then
     yum install -y nginx
     systemctl enable nginx
     if [ ! -f "/etc/nginx/conf.d/jumpserver.conf" ]; then
@@ -150,38 +155,38 @@ if [ "$(rpm -qa | grep nginx)" == "" ]; then
             sed -i "s@/opt@$install_dir@g" /etc/nginx/conf.d/jumpserver.conf
         fi
     fi
-    if [ "$(systemctl status nginx | grep running)" == "" ]; then
+    if [ ! "$(systemctl status nginx | grep running)" ]; then
         systemctl start nginx
     fi
 else
-    if [ "$(systemctl status nginx | grep running)" == "" ]; then
+    if [ ! "$(systemctl status nginx | grep running)" ]; then
         systemctl start nginx
     fi
 fi
 
 echo -e "\033[31m 配置 Docker \033[0m"
-if [ "$(rpm -qa | grep docker-ce)" == "" ]; then
+if [ ! "$(rpm -qa | grep docker-ce)" ]; then
     if [ ! -f "/etc/yum.repos.d/docker-ce.repo" ]; then
         yum install -y yum-utils device-mapper-persistent-data lvm2
         yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
         rpm --import https://mirrors.aliyun.com/docker-ce/linux/centos/gpg
     fi
-    if [ "$(rpm -qa | grep docker-ce)" == "" ]; then
+    if [ ! "$(rpm -qa | grep docker-ce)" ]; then
         yum install -y docker-ce
         curl -sSL https://get.daocloud.io/daotools/set_mirror.sh | sh -s http://f1361db2.m.daocloud.io
         systemctl enable docker
     fi
-    if [ "$(systemctl status docker | grep running)" == "" ]; then
+    if [ ! "$(systemctl status docker | grep running)" ]; then
         systemctl start docker
     fi
 else
-    if [ "$(systemctl status docker | grep running)" == "" ]; then
+    if [ ! "$(systemctl status docker | grep running)" ]; then
         systemctl start docker
     fi
 fi
 
 echo -e "\033[31m 配置 Python3.6 \033[0m"
-if [ "$(rpm -qa | grep python3-3.6)" == "" ] || [ "$(rpm -qa | grep python3-devel-3.6)" == "" ]; then
+if [ ! "$(rpm -qa | grep python3-3.6)" ] || [ ! "$(rpm -qa | grep python3-devel-3.6)" ]; then
     yum -y install python36 python36-devel
 fi
 if [ ! -d "$install_dir/py3" ]; then
@@ -231,18 +236,19 @@ pip install --upgrade pip setuptools
 pip install -r $install_dir/jumpserver/requirements/requirements.txt
 
 echo -e "\033[31m 处理 Jumpser 配置文件 \033[0m"
-if [ "$SECRET_KEY" == "" ]; then
+if [ ! "$SECRET_KEY" ]; then
     SECRET_KEY=`cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 50`
     sed -i "0,/SECRET_KEY=/s//SECRET_KEY=$SECRET_KEY/" $install_dir/$script_file
 fi
-if [ "$BOOTSTRAP_TOKEN" == "" ]; then
+if [ ! "$BOOTSTRAP_TOKEN" ]; then
     BOOTSTRAP_TOKEN=`cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 16`
     sed -i "0,/BOOTSTRAP_TOKEN=/s//BOOTSTRAP_TOKEN=$BOOTSTRAP_TOKEN/" $install_dir/$script_file
 fi
-if [ "$Server_IP" == "" ]; then
+if [ ! "$Server_IP" ]; then
     Server_IP=`ip addr | grep 'state UP' -A2 | grep inet | egrep -v '(127.0.0.1|inet6|docker)' | awk '{print $2}' | tr -d "addr:" | head -n 1 | cut -d / -f1`
 fi
-if [ ! -f "$install_dir/jumpserver/config.yml" ]; then
+
+function config_jumpserver {
     cp $install_dir/jumpserver/config_example.yml $install_dir/jumpserver/config.yml
     sed -i "s/SECRET_KEY:/SECRET_KEY: $SECRET_KEY/g" $install_dir/jumpserver/config.yml
     sed -i "s/BOOTSTRAP_TOKEN:/BOOTSTRAP_TOKEN: $BOOTSTRAP_TOKEN/g" $install_dir/jumpserver/config.yml
@@ -257,23 +263,14 @@ if [ ! -f "$install_dir/jumpserver/config.yml" ]; then
     sed -i "s/REDIS_HOST: 127.0.0.1/REDIS_HOST: $REDIS_HOST/g" $install_dir/jumpserver/config.yml
     sed -i "s/REDIS_PORT: 6379/REDIS_PORT: $REDIS_PORT/g" $install_dir/jumpserver/config.yml
     sed -i "s/# REDIS_PASSWORD: /REDIS_PASSWORD: $REDIS_PASSWORD/g" $install_dir/jumpserver/config.yml
+}
+
+if [ ! -f "$install_dir/jumpserver/config.yml" ]; then
+    config_jumpserver
 else
     if [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep SECRET_KEY | awk '{print $2}')" != "$SECRET_KEY" ] || [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep BOOTSTRAP_TOKEN | awk '{print $2}')" != "$BOOTSTRAP_TOKEN" ] || [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep DB_PASSWORD | awk '{print $2}')" != "$DB_PASSWORD" ] || [ "$(cat $install_dir/jumpserver/config.yml | grep -v ^\# | grep REDIS_PASSWORD | awk '{print $2}')" != "$REDIS_PASSWORD" ]; then
         rm -rf $install_dir/jumpserver/config.yml
-        cp $install_dir/jumpserver/config_example.yml $install_dir/jumpserver/config.yml
-        sed -i "s/SECRET_KEY:/SECRET_KEY: $SECRET_KEY/g" $install_dir/jumpserver/config.yml
-        sed -i "s/BOOTSTRAP_TOKEN:/BOOTSTRAP_TOKEN: $BOOTSTRAP_TOKEN/g" $install_dir/jumpserver/config.yml
-        sed -i "s/# DEBUG: true/DEBUG: false/g" $install_dir/jumpserver/config.yml
-        sed -i "s/# LOG_LEVEL: DEBUG/LOG_LEVEL: ERROR/g" $install_dir/jumpserver/config.yml
-        sed -i "s/# SESSION_EXPIRE_AT_BROWSER_CLOSE: false/SESSION_EXPIRE_AT_BROWSER_CLOSE: true/g" $install_dir/jumpserver/config.yml
-        sed -i "s/DB_HOST: 127.0.0.1/DB_HOST: $DB_HOST/g" $install_dir/jumpserver/config.yml
-        sed -i "s/DB_PORT: 3306/DB_PORT: $DB_PORT/g" $install_dir/jumpserver/config.yml
-        sed -i "s/DB_USER: jumpserver/DB_USER: $DB_USER/g" $install_dir/jumpserver/config.yml
-        sed -i "s/DB_PASSWORD: /DB_PASSWORD: $DB_PASSWORD/g" $install_dir/jumpserver/config.yml
-        sed -i "s/DB_NAME: jumpserver/DB_NAME: $DB_NAME/g" $install_dir/jumpserver/config.yml
-        sed -i "s/REDIS_HOST: 127.0.0.1/REDIS_HOST: $REDIS_HOST/g" $install_dir/jumpserver/config.yml
-        sed -i "s/REDIS_PORT: 6379/REDIS_PORT: $REDIS_PORT/g" $install_dir/jumpserver/config.yml
-        sed -i "s/# REDIS_PASSWORD: /REDIS_PASSWORD: $REDIS_PASSWORD/g" $install_dir/jumpserver/config.yml
+        config_jumpserver
     fi
 fi
 
@@ -298,8 +295,8 @@ systemctl start jms_core || {
     systemctl stop jms_core
     systemctl start jms_core
 }
-if [ "$(docker ps -a | grep jms_koko | grep $Version)" == "" ] || [ "$flag" == "1" ]; then
-    if [ "$(docker ps | grep jms_koko)" != "" ]; then
+if [ ! "$(docker ps -a | grep jms_koko | grep $Version)" ] || [ "$flag" == "1" ]; then
+    if [ "$(docker ps | grep jms_koko)" ]; then
         docker stop jms_koko
         docker rm jms_koko
     fi
@@ -307,8 +304,8 @@ if [ "$(docker ps -a | grep jms_koko | grep $Version)" == "" ] || [ "$flag" == "
 else
     docker restart jms_koko
 fi
-if [ "$(docker ps -a | grep jms_guacamole | grep $Version)" == "" ] || [ "$flag" == "1" ]; then
-    if [ "$(docker ps | grep jms_guacamole)" != "" ]; then
+if [ ! "$(docker ps -a | grep jms_guacamole | grep $Version)" ] || [ "$flag" == "1" ]; then
+    if [ "$(docker ps | grep jms_guacamole)" ]; then
         docker stop jms_guacamole
         docker rm jms_guacamole
     fi
