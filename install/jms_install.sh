@@ -146,7 +146,9 @@ if [ ! -f "/etc/yum.repos.d/nginx.repo" ]; then
     echo -e "[nginx-stable]\nname=nginx stable repo\nbaseurl=http://nginx.org/packages/centos/\$releasever/\$basearch/\ngpgcheck=1\nenabled=1\ngpgkey=https://nginx.org/keys/nginx_signing.key\nmodule_hotfixes=true" > /etc/yum.repos.d/nginx.repo
 fi
 if [ ! "$(rpm -qa | grep nginx)" ]; then
-    yum install -y nginx
+    yum install -y nginx || {
+        yum -y localinstall --nogpgcheck https://demo.jumpserver.org/download/centos/7/nginx-1.16.1-1.el7.ngx.x86_64.rpm
+    }
     systemctl enable nginx
     if [ ! -f "/etc/nginx/conf.d/jumpserver.conf" ]; then
         echo > /etc/nginx/conf.d/default.conf
