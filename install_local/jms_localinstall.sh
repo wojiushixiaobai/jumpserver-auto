@@ -77,9 +77,7 @@ fi
 
 echo -e "\033[31m 安装基本依赖 \033[0m"
 yum update -y
-if [ ! "$(rpm -qa | grep wget)" ] || [ ! "$(rpm -qa | grep gcc)" ] || [ ! "$(rpm -qa | grep git)" ]; then
-    yum -y install wget gcc git
-fi
+yum -y install wget gcc git
 
 echo -e "\033[31m 配置 Mariadb \033[0m"
 if [ $DB_HOST == 127.0.0.1 ]; then
