@@ -77,6 +77,7 @@ if [ ! "$(rpm -qa | grep epel-release)" ]; then
 fi
 
 echo -e "\033[31m 安装基本依赖 \033[0m"
+yum clean all
 yum update -y
 yum -y install wget gcc git
 
