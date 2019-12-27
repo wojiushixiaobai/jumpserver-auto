@@ -25,7 +25,7 @@ REDIS_PASSWORD=
 # 修改到此结束
 #----------------------------
 
-install_dir=/opt
+install_dir=$(cd "$(dirname "$0")";pwd)
 script_file=jms_localinstall.sh
 
 echo -e "\033[31m 请勿在任何已经部署了其他服务的生产服务器上面运行此脚本 \033[0m"
@@ -65,10 +65,14 @@ if [ "$(getenforce)" != "Disabled" ]; then
 fi
 
 echo -e "\033[31m 设置 Yum 源 \033[0m"
-wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo || {
-    yum install -y wget
-    wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
-}
+if grep -q 'mirrors.aliyun.com' /etc/yum.repos.d/CentOS-Base.repo; then
+    true
+else
+    wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo || {
+        yum install -y wget
+        wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+    }
+fi
 sed -i -e '/mirrors.cloud.aliyuncs.com/d' -e '/mirrors.aliyuncs.com/d' /etc/yum.repos.d/CentOS-Base.repo
 if [ ! "$(rpm -qa | grep epel-release)" ]; then
     yum -y install epel-release
@@ -87,7 +91,16 @@ if [ $DB_HOST == 127.0.0.1 ]; then
         systemctl enable mariadb
     fi
     if [ $DB_PORT != 3306 ]; then
-        sed -i "10i port=$DB_PORT" $install_dir/$script_file
+        if [ ! "$(cat /etc/my.cnf | grep port=)" ]; then
+            sed -i "10i port=$DB_PORT" /etc/my.cnf
+        else
+            sed -i "s/port=.*/port=$DB_PORT/g" /etc/my.cnf
+        fi
+        if [ ! "$(rpm -qa | grep policycoreutils-python)" ]; then
+            yum -y install policycoreutils-python
+        fi
+        semanage port -a -t mysqld_port_t -p tcp $DB_PORT
+        systemctl restart mariadb
     fi
     if [ "$(systemctl status mariadb | grep running)" == "" ]; then
         systemctl start mariadb
@@ -114,11 +127,16 @@ if [ $REDIS_HOST == 127.0.0.1 ]; then
         yum -y install redis
         systemctl enable redis
     fi
-    if [ ! $REDIS_PORT != 6379 ]; then
+    if [ $REDIS_PORT != 6379 ]; then
         sed -i "s/port 6379/port $REDIS_PORT/g" /etc/redis.conf
+        if [ ! "$(rpm -qa | grep policycoreutils-python)" ]; then
+            yum -y install policycoreutils-python
+        fi
+        semanage port -a -t redis_port_t -p tcp $REDIS_PORT
+        systemctl restart redis
     fi
     if [ ! $REDIS_PASSWORD ]; then
-          if [ "$(cat /etc/redis.conf | grep -v ^\# | grep requirepass | awk '{print $2}')" == "" ]; then
+          if [ ! "$(cat /etc/redis.conf | grep -v ^\# | grep requirepass | awk '{print $2}')" ]; then
               REDIS_PASSWORD=`cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 24`
               sed -i "481i requirepass $REDIS_PASSWORD" /etc/redis.conf
               sed -i "0,/REDIS_PASSWORD=/s//REDIS_PASSWORD=$REDIS_PASSWORD/" $install_dir/$script_file
@@ -127,9 +145,13 @@ if [ $REDIS_HOST == 127.0.0.1 ]; then
               sed -i "0,/REDIS_PASSWORD=/s//REDIS_PASSWORD=$REDIS_PASSWORD/" $install_dir/$script_file
           fi
     else
-          REDIS_PASSWORD=`cat /etc/redis.conf | grep -v ^\# | grep requirepass | awk '{print $2}'`
-          sed -i '23d' $install_dir/$script_file
-          sed -i "23i REDIS_PASSWORD=$REDIS_PASSWORD" $install_dir/$script_file
+          if [ "$(cat /etc/redis.conf | grep -v ^\# | grep requirepass | awk '{print $2}')" ]; then
+              REDIS_PASSWORD=`cat /etc/redis.conf | grep -v ^\# | grep requirepass | awk '{print $2}'`
+              sed -i "0,/REDIS_PASSWORD=.*/REDIS_PASSWORD=$REDIS_PASSWORD/" $install_dir/$script_file
+          else
+              sed -i "481i requirepass $REDIS_PASSWORD" /etc/redis.conf
+              sed -i "0,/REDIS_PASSWORD=/s//REDIS_PASSWORD=$REDIS_PASSWORD/" $install_dir/$script_file
+          fi
     fi
     if [ ! "$(systemctl status redis | grep running)" ]; then
         systemctl start redis
@@ -139,29 +161,33 @@ if [ $REDIS_HOST == 127.0.0.1 ]; then
     fi
 fi
 
+function config_nginx {
+  wget -O /etc/nginx/conf.d/jumpserver.conf https://demo.jumpserver.org/download/nginx/conf.d/jumpserver.conf
+  if [ $install_dir != "/opt" ]; then
+      sed -i "s@/opt@$install_dir@g" /etc/nginx/conf.d/jumpserver.conf
+  fi
+}
+
 echo -e "\033[31m 配置 Nginx \033[0m"
 if [ ! -f "/etc/yum.repos.d/nginx.repo" ]; then
     echo -e "[nginx-stable]\nname=nginx stable repo\nbaseurl=http://nginx.org/packages/centos/\$releasever/\$basearch/\ngpgcheck=1\nenabled=1\ngpgkey=https://nginx.org/keys/nginx_signing.key\nmodule_hotfixes=true" > /etc/yum.repos.d/nginx.repo
 fi
-if [ ! "$(rpm -qa | grep nginx)" ]; then
+if [ ! "$(rpm -qa | grep nginx)" ] ; then
     yum install -y nginx || {
         yum -y localinstall --nogpgcheck https://demo.jumpserver.org/download/centos/7/nginx-1.16.1-1.el7.ngx.x86_64.rpm
     }
     systemctl enable nginx
-    if [ ! -f "/etc/nginx/conf.d/jumpserver.conf" ]; then
-        echo > /etc/nginx/conf.d/default.conf
-        wget -O /etc/nginx/conf.d/jumpserver.conf https://demo.jumpserver.org/download/nginx/conf.d/jumpserver.conf
-        if [ $install_dir != "/opt" ]; then
-            sed -i "s@/opt@$install_dir@g" /etc/nginx/conf.d/jumpserver.conf
-        fi
-    fi
-    if [ ! "$(systemctl status nginx | grep running)" ]; then
-        systemctl start nginx
-    fi
+fi
+if [ ! -f "/etc/nginx/conf.d/jumpserver.conf" ]; then
+    echo > /etc/nginx/conf.d/default.conf
+    config_nginx
 else
-    if [ ! "$(systemctl status nginx | grep running)" ]; then
-        systemctl start nginx
+    if [ ! -s "/etc/nginx/conf.d/jumpserver.conf" ]; then
+        config_nginx
     fi
+fi
+if [ ! "$(systemctl status nginx | grep running)" ]; then
+    systemctl start nginx
 fi
 
 echo -e "\033[31m 配置 Python3.6 \033[0m"
