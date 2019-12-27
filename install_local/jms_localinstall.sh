@@ -99,7 +99,7 @@ if [ $DB_HOST == 127.0.0.1 ]; then
         if [ ! "$(rpm -qa | grep policycoreutils-python)" ]; then
             yum -y install policycoreutils-python
         fi
-        semanage port -a -t mysqld_port_t -p tcp $DB_PORT
+        semanage port -a -t mysqld_port_t -p tcp $DB_PORT || true
         systemctl restart mariadb
     fi
     if [ "$(systemctl status mariadb | grep running)" == "" ]; then
@@ -132,7 +132,7 @@ if [ $REDIS_HOST == 127.0.0.1 ]; then
         if [ ! "$(rpm -qa | grep policycoreutils-python)" ]; then
             yum -y install policycoreutils-python
         fi
-        semanage port -a -t redis_port_t -p tcp $REDIS_PORT
+        semanage port -a -t redis_port_t -p tcp $REDIS_PORT || true
         systemctl restart redis
     fi
     if [ ! $REDIS_PASSWORD ]; then
