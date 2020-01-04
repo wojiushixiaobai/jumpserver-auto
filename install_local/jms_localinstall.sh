@@ -4,7 +4,7 @@ set -e
 
 # 如果你不知道下面的配置有什么用，请保持默认
 
-Version=1.5.5
+Version=1.5.6
 
 # Jms 加密配置
 SECRET_KEY=
