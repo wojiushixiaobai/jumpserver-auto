@@ -200,7 +200,8 @@ if [ ! "$(rpm -qa | grep docker-ce)" ]; then
     fi
     if [ ! "$(rpm -qa | grep docker-ce)" ]; then
         yum install -y docker-ce
-        curl -sSL https://get.daocloud.io/daotools/set_mirror.sh | sh -s http://f1361db2.m.daocloud.io
+        mkdir /etc/docker
+        wget -O /etc/docker/daemon.json http://demo.jumpserver.org/download/docker/daemon.json
         systemctl enable docker
     fi
     if [ ! "$(systemctl status docker | grep running)" ]; then
@@ -230,19 +231,13 @@ fi
 echo -e "\033[31m 下载组件 \033[0m"
 cd $install_dir
 if [ ! -d "$install_dir/jumpserver" ]; then
-    git clone --depth=1 https://github.com/jumpserver/jumpserver.git || {
-        rm -rf $install_dir/jumpserver
-        wget -O $install_dir/jumpserver.tar.gz https://demo.jumpserver.org/download/jumpserver/$Version/jumpserver.tar.gz
-        tar xf $install_dir/jumpserver.tar.gz -C $install_dir
-        rm -rf $install_dir/jumpserver.tar.gz
-    }
+    wget -O $install_dir/jumpserver.tar.gz https://demo.jumpserver.org/download/jumpserver/$Version/jumpserver.tar.gz
+    tar xf $install_dir/jumpserver.tar.gz -C $install_dir
+    rm -rf $install_dir/jumpserver.tar.gz
 fi
 if [ ! -d "$install_dir/luna" ]; then
     if [ ! -f "$install_dir/luna.tar.gz" ]; then
-        wget -O $install_dir/luna.tar.gz https://github.com/jumpserver/luna/releases/download/$Version/luna.tar.gz || {
-            rm -rf $install_dir/luna.tar.gz
-            wget -O $install_dir/luna.tar.gz https://demo.jumpserver.org/download/luna/$Version/luna.tar.gz
-        }
+        wget -O $install_dir/luna.tar.gz https://demo.jumpserver.org/download/luna/$Version/luna.tar.gz
     fi
     tar xf $install_dir/luna.tar.gz -C $install_dir
     chown -R nginx:nginx $install_dir/luna

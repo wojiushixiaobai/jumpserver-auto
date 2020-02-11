@@ -208,19 +208,13 @@ fi
 echo -e "\033[31m 下载组件 \033[0m"
 cd $install_dir
 if [ ! -d "$install_dir/jumpserver" ]; then
-    git clone --depth=1 https://github.com/jumpserver/jumpserver.git || {
-        rm -rf $install_dir/jumpserver
-        wget -O $install_dir/jumpserver.tar.gz https://demo.jumpserver.org/download/jumpserver/$Version/jumpserver.tar.gz
-        tar xf $install_dir/jumpserver.tar.gz -C $install_dir
-        rm -rf $install_dir/jumpserver.tar.gz
-    }
+    wget -O $install_dir/jumpserver.tar.gz https://demo.jumpserver.org/download/jumpserver/$Version/jumpserver.tar.gz
+    tar xf $install_dir/jumpserver.tar.gz -C $install_dir
+    rm -rf $install_dir/jumpserver.tar.gz
 fi
 if [ ! -d "$install_dir/luna" ]; then
     if [ ! -f "$install_dir/luna.tar.gz" ]; then
-        wget -O $install_dir/luna.tar.gz https://github.com/jumpserver/luna/releases/download/$Version/luna.tar.gz || {
-            rm -rf $install_dir/luna.tar.gz
-            wget -O $install_dir/luna.tar.gz https://demo.jumpserver.org/download/luna/$Version/luna.tar.gz
-        }
+        wget -O $install_dir/luna.tar.gz https://demo.jumpserver.org/download/luna/$Version/luna.tar.gz
     fi
     tar xf $install_dir/luna.tar.gz -C $install_dir
     chown -R nginx:nginx $install_dir/luna
@@ -229,10 +223,7 @@ fi
 
 if [ ! -d "$install_dir/kokodir" ]; then
     if [ ! -f "$install_dir/koko-master-linux-amd64.tar.gz" ]; then
-        wget -O $install_dir/koko-master-linux-amd64.tar.gz https://github.com/jumpserver/koko/releases/download/$Version/koko-master-linux-amd64.tar.gz || {
-            rm -rf $install_dir/koko-master-linux-amd64.tar.gz
-            wget -O $install_dir/koko-master-linux-amd64.tar.gz https://demo.jumpserver.org/download/koko/$Version/koko-master-linux-amd64.tar.gz
-        }
+        wget -O $install_dir/koko-master-linux-amd64.tar.gz https://demo.jumpserver.org/download/koko/$Version/koko-master-linux-amd64.tar.gz
     fi
     tar xf $install_dir/koko-master-linux-amd64.tar.gz -C $install_dir
     chown -R root:root $install_dir/kokodir
@@ -240,12 +231,9 @@ if [ ! -d "$install_dir/kokodir" ]; then
 fi
 
 if [ ! -d "$install_dir/docker-guacamole" ]; then
-    git clone --depth=1 https://github.com/jumpserver/docker-guacamole.git || {
-        rm -rf $install_dir/docker-guacamole
-        wget -O $install_dir/guacamole.tar.gz https://demo.jumpserver.org/download/guacamole/$Version/guacamole.tar.gz
-        tar xf $install_dir/guacamole.tar.gz -C $install_dir
-        rm -rf $install_dir/guacamole.tar.gz
-    }
+    wget -O $install_dir/guacamole.tar.gz https://demo.jumpserver.org/download/guacamole/$Version/guacamole.tar.gz
+    tar xf $install_dir/guacamole.tar.gz -C $install_dir
+    rm -rf $install_dir/guacamole.tar.gz
 fi
 
 echo -e "\033[31m 配置 Jumpser 依赖 \033[0m"
@@ -323,10 +311,7 @@ if [ ! -f "/usr/lib/systemd/system/jms_guacd.service" ]; then
     systemctl enable jms_guacd
 fi
 if [ ! -f "/bin/ssh-forward" ]; then
-    wget -O $install_dir/linux-amd64.tar.gz https://github.com/ibuler/ssh-forward/releases/download/v0.0.5/linux-amd64.tar.gz || {
-        rm -rf $install_dir/linux-amd64.tar.gz
-        wget -O $install_dir/linux-amd64.tar.gz https://demo.jumpserver.org/download/ssh-forward/v0.0.5/linux-amd64.tar.gz
-    }
+    wget -O $install_dir/linux-amd64.tar.gz https://demo.jumpserver.org/download/ssh-forward/v0.0.5/linux-amd64.tar.gz
     tar xf $install_dir/linux-amd64.tar.gz -C /bin/
     chown root:root /bin/ssh-forward
     chmod +x /bin/ssh-forward
