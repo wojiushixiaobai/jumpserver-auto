@@ -268,16 +268,16 @@ yum install -y ffmpeg-devel freerdp1.2-devel libvncserver-devel pulseaudio-libs-
 
 cd /config
 if [ ! -d "/config/tomcat9" ]; then
-    if [ ! -f "/config/apache-tomcat-9.0.30.tar.gz" ]; then
-        wget -O /config/apache-tomcat-9.0.30.tar.gz https://mirrors.tuna.tsinghua.edu.cn/apache/tomcat/tomcat-9/v9.0.30/bin/apache-tomcat-9.0.30.tar.gz || {
-            rm -rf /config/apache-tomcat-9.0.30.tar.gz
-            wget -O /config/apache-tomcat-9.0.30.tar.gz https://demo.jumpserver.org/download/apache/tomcat/tomcat-9/v9.0.30/bin/apache-tomcat-9.0.30.tar.gz
+    if [ ! -f "/config/apache-tomcat-9.0.31.tar.gz" ]; then
+        wget -O /config/apache-tomcat-9.0.31.tar.gz https://mirrors.tuna.tsinghua.edu.cn/apache/tomcat/tomcat-9/v9.0.31/bin/apache-tomcat-9.0.31.tar.gz || {
+            rm -rf /config/apache-tomcat-9.0.31.tar.gz
+            wget -O /config/apache-tomcat-9.0.31.tar.gz https://demo.jumpserver.org/download/apache/tomcat/tomcat-9/v9.0.31/bin/apache-tomcat-9.0.31.tar.gz
         }
     fi
-    tar xf /config/apache-tomcat-9.0.30.tar.gz -C /config
-    mv /config/apache-tomcat-9.0.30 /config/tomcat9
+    tar xf /config/apache-tomcat-9.0.31.tar.gz -C /config
+    mv /config/apache-tomcat-9.0.31 /config/tomcat9
     rm -rf /config/tomcat9/webapps/*
-    rm -rf /config/apache-tomcat-9.0.30.tar.gz
+    rm -rf /config/apache-tomcat-9.0.31.tar.gz
     sed -i 's/Connector port="8080"/Connector port="8081"/g' /config/tomcat9/conf/server.xml
     sed -i 's/level = FINE/level = OFF/g' /config/tomcat9/conf/logging.properties
     sed -i 's/level = INFO/level = OFF/g' /config/tomcat9/conf/logging.properties
