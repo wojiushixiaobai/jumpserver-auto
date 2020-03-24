@@ -147,7 +147,7 @@ if [ $REDIS_HOST == 127.0.0.1 ]; then
         fi
     else
         if [ "$(cat /etc/redis.conf | grep -v ^\# | grep requirepass | awk '{print $2}')" ]; then
-            sed -i "s/requirepass .*/requirepass $REDIS_PASSWORD/" /etc/redis.conf
+            sed -i "s/requirepass .*/requirepass $REDIS_PASSWORD/g" /etc/redis.conf
             systemctl restart redis
         else
             sed -i "481i requirepass $REDIS_PASSWORD" /etc/redis.conf
@@ -254,7 +254,7 @@ echo -e "\033[31m 配置 Jumpser 依赖 \033[0m"
 yum -y install $(cat $install_dir/jumpserver/requirements/rpm_requirements.txt)
 source $install_dir/py3/bin/activate
 pip install wheel
-pip install --upgrade pip setuptools
+# pip install --upgrade pip setuptools
 pip install -r $install_dir/jumpserver/requirements/requirements.txt
 
 echo -e "\033[31m 处理 Jumpser 配置文件 \033[0m"

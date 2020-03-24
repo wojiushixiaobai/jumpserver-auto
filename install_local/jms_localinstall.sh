@@ -240,7 +240,7 @@ echo -e "\033[31m 配置 Jumpser 依赖 \033[0m"
 yum -y install $(cat $install_dir/jumpserver/requirements/rpm_requirements.txt)
 source $install_dir/py3/bin/activate
 pip install wheel
-pip install --upgrade pip setuptools
+# pip install --upgrade pip setuptools
 pip install -r $install_dir/jumpserver/requirements/requirements.txt
 
 echo -e "\033[31m 配置 Guacamole 依赖 \033[0m"
@@ -311,8 +311,7 @@ if [ ! -f "/usr/lib/systemd/system/jms_guacd.service" ]; then
     systemctl enable jms_guacd
 fi
 if [ ! -f "/bin/ssh-forward" ]; then
-    wget -O $install_dir/linux-amd64.tar.gz https://demo.jumpserver.org/download/ssh-forward/v0.0.5/linux-amd64.tar.gz
-    tar xf $install_dir/linux-amd64.tar.gz -C /bin/
+    tar xf $install_dir/docker-guacamole/ssh-forward.tar.gz -C /bin/
     chown root:root /bin/ssh-forward
     chmod +x /bin/ssh-forward
     rm -rf $install_dir/linux-amd64.tar.gz
